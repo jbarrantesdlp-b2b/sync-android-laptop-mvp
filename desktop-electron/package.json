@@ -1,0 +1,11 @@
+﻿{
+  "name": "desktop-electron",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "start": "node main.js"
+  },
+  "dependencies": {
+    "ws": "^8.13.0"
+  }
+}
