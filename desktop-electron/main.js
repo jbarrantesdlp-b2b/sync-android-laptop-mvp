@@ -1,5 +1,6 @@
 ﻿const { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, shell } = require('electron');
 const path = require('path');
+const http = require('http');
 const WebSocket = require('ws');
 const { exec } = require('child_process');
 const os = require('os');
@@ -8,20 +9,29 @@ const qrcode = require('qrcode-terminal');
 const PORT = 8123;
 let mainWindow = null;
 let tray = null;
+let server = null;
 let wss = null;
 let activeWs = null;
 let telemetryInterval = null;
 
-function getLocalIp() {
+function getAllLocalIps() {
+  const ips = [];
   const interfaces = os.networkInterfaces();
   for (const name of Object.keys(interfaces)) {
     for (const iface of interfaces[name]) {
       if (iface.family === 'IPv4' && !iface.internal) {
-        return iface.address;
+        ips.push({ name, address: iface.address });
       }
     }
   }
-  return '127.0.0.1';
+  return ips;
+}
+
+function getPrimaryLocalIp() {
+  const ips = getAllLocalIps();
+  const wifi = ips.find(i => i.name.toLowerCase().includes('wi-fi') || i.name.toLowerCase().includes('wireless') || i.name.toLowerCase().includes('wlan'));
+  if (wifi) return wifi.address;
+  return ips.length > 0 ? ips[0].address : '127.0.0.1';
 }
 
 function createWindow() {
@@ -40,7 +50,6 @@ function createWindow() {
 
   mainWindow.loadFile(path.join(__dirname, 'index.html'));
 
-  // Minimize to tray on close
   mainWindow.on('close', (event) => {
     if (!app.isQuitting) {
       event.preventDefault();
@@ -57,9 +66,8 @@ function createWindow() {
     return false;
   });
 
-  // Send server info to UI once ready
   mainWindow.webContents.on('did-finish-load', () => {
-    const localIp = getLocalIp();
+    const localIp = getPrimaryLocalIp();
     const wsUrl = `ws://${localIp}:${PORT}`;
     mainWindow.webContents.send('server-info', { url: wsUrl, ip: localIp, port: PORT });
   });
@@ -106,6 +114,56 @@ function createTray() {
   }
 }
 
+function executeCommand(type, payload) {
+  console.log(`[SyncApp Command Executed]: ${type}`, payload);
+  switch (type) {
+    case 'LOCK_SCREEN':
+      exec('powershell -c "rundll32.exe user32.dll,LockWorkStation"');
+      break;
+
+    case 'OPEN_URL':
+      if (payload && payload.url) {
+        shell.openExternal(payload.url);
+      }
+      break;
+
+    case 'VOLUME_MUTE':
+      exec('powershell -c "$w = New-Object -ComObject wscript.shell; $w.SendKeys([char]173)"');
+      break;
+
+    case 'VOLUME_UP':
+      exec('powershell -c "$w = New-Object -ComObject wscript.shell; $w.SendKeys([char]175)"');
+      break;
+
+    case 'VOLUME_DOWN':
+      exec('powershell -c "$w = New-Object -ComObject wscript.shell; $w.SendKeys([char]174)"');
+      break;
+
+    case 'MEDIA_PLAY_PAUSE':
+      exec('powershell -c "$w = New-Object -ComObject wscript.shell; $w.SendKeys([char]179)"');
+      break;
+
+    case 'PRESENTATION_NEXT':
+      exec('powershell -c "$w = New-Object -ComObject wscript.shell; $w.SendKeys(\'{RIGHT}\')"');
+      break;
+
+    case 'PRESENTATION_PREV':
+      exec('powershell -c "$w = New-Object -ComObject wscript.shell; $w.SendKeys(\'{LEFT}\')"');
+      break;
+
+    case 'SYNC_CLIPBOARD':
+      if (payload && payload.text) {
+        const text = payload.text;
+        const clean = text.replace(/"/g, '`"');
+        exec(`powershell -c "Set-Clipboard -Value \\"${clean}\\""`);
+        if (text.startsWith('http://') || text.startsWith('https://')) {
+          shell.openExternal(text);
+        }
+      }
+      break;
+  }
+}
+
 function startTelemetryBroadcaster() {
   if (telemetryInterval) clearInterval(telemetryInterval);
   telemetryInterval = setInterval(() => {
@@ -136,44 +194,86 @@ function startTelemetryBroadcaster() {
   }, 3000);
 }
 
-function startWebSocketServer() {
-  const localIp = getLocalIp();
-  const wsUrl = `ws://${localIp}:${PORT}`;
+function startServer() {
+  const primaryIp = getPrimaryLocalIp();
+  const wsUrl = `ws://${primaryIp}:${PORT}`;
 
-  try {
-    wss = new WebSocket.Server({ port: PORT, host: '0.0.0.0' });
-  } catch (e) {
-    console.error('Failed to create WebSocket Server:', e);
-    return;
-  }
+  // HTTP Server for REST Fallback
+  server = http.createServer((req, res) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  wss.on('error', (err) => {
-    console.error('WebSocket Server Error:', err);
+    if (req.method === 'OPTIONS') {
+      res.writeHead(204);
+      res.end();
+      return;
+    }
+
+    if (req.url === '/ping' || req.url === '/status') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ status: 'CONNECTED', hostName: os.hostname(), ip: primaryIp }));
+      if (mainWindow) {
+        mainWindow.webContents.send('status-update', { status: 'CONNECTED', device: `Celular (${req.socket.remoteAddress})` });
+      }
+      return;
+    }
+
+    if (req.method === 'POST' && (req.url === '/api/command' || req.url === '/command')) {
+      let body = '';
+      req.on('data', chunk => { body += chunk.toString(); });
+      req.on('end', () => {
+        try {
+          const msg = JSON.parse(body);
+          executeCommand(msg.type, msg.payload);
+
+          if (mainWindow) {
+            mainWindow.webContents.send('status-update', { status: 'CONNECTED', device: `Celular (${req.socket.remoteAddress})` });
+            mainWindow.webContents.send('log-message', { type: 'data', message: `Comando HTTP [${msg.type}]: ${JSON.stringify(msg.payload)}` });
+          }
+
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ result: 'SUCCESS', action: msg.type }));
+        } catch (e) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: e.message }));
+        }
+      });
+      return;
+    }
+
+    res.writeHead(404, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Not found' }));
   });
 
-  console.log('====================================================');
-  console.log(`[SyncApp Server] Escuchando en: ${wsUrl}`);
-  console.log('====================================================');
-  try {
-    qrcode.generate(wsUrl, { small: true });
-  } catch (_e) {}
+  // Attach WebSocket Server to HTTP Server
+  wss = new WebSocket.Server({ server });
+
+  server.listen(PORT, '0.0.0.0', () => {
+    console.log('====================================================');
+    console.log(`[SyncApp Server] Dual Protocol activo en: ${wsUrl}`);
+    console.log('====================================================');
+    try {
+      qrcode.generate(wsUrl, { small: true });
+    } catch (_e) {}
+  });
 
   startTelemetryBroadcaster();
 
   wss.on('connection', (ws, req) => {
     activeWs = ws;
     const ip = req.socket.remoteAddress;
-    console.log(`[SyncApp] Conexión establecida desde: ${ip}`);
+    console.log(`[SyncApp WebSocket] Conexión establecida desde: ${ip}`);
 
     if (mainWindow) {
-      mainWindow.webContents.send('status-update', { status: 'CONNECTED', device: `Xiaomi (${ip})` });
-      mainWindow.webContents.send('log-message', { type: 'connect', message: `Cliente conectado desde ${ip}` });
+      mainWindow.webContents.send('status-update', { status: 'CONNECTED', device: `Celular (${ip})` });
+      mainWindow.webContents.send('log-message', { type: 'connect', message: `Cliente WebSocket conectado desde ${ip}` });
     }
 
     ws.send(JSON.stringify({
       id: 'init-handshake',
       type: 'CONNECTION_STATE',
-      payload: { status: 'CONNECTED', hostName: 'Laptop-Host' },
+      payload: { status: 'CONNECTED', hostName: os.hostname() },
       timestamp: Date.now(),
       direction: 'INBOUND',
       status: 'RECEIVED'
@@ -184,7 +284,7 @@ function startWebSocketServer() {
         const msg = JSON.parse(data.toString());
 
         if (mainWindow && msg.type !== 'PING') {
-          mainWindow.webContents.send('log-message', { type: 'data', message: `Mensaje de celular [${msg.type}]: ${JSON.stringify(msg.payload)}` });
+          mainWindow.webContents.send('log-message', { type: 'data', message: `Mensaje WebSocket [${msg.type}]: ${JSON.stringify(msg.payload)}` });
         }
 
         if (msg.type === 'PING' || msg.payload === 'PING') {
@@ -199,74 +299,8 @@ function startWebSocketServer() {
           return;
         }
 
-        switch (msg.type) {
-          case 'OPEN_URL':
-            if (msg.payload && msg.payload.url) {
-              shell.openExternal(msg.payload.url);
-              sendAck(ws, msg.id, 'OPEN_URL', 'SUCCESS');
-            }
-            break;
-
-          case 'VOLUME_MUTE':
-            exec('powershell -c "$w = New-Object -ComObject wscript.shell; $w.SendKeys([char]173)"');
-            sendAck(ws, msg.id, 'VOLUME_MUTE', 'SUCCESS');
-            break;
-
-          case 'VOLUME_UP':
-            exec('powershell -c "$w = New-Object -ComObject wscript.shell; $w.SendKeys([char]175)"');
-            sendAck(ws, msg.id, 'VOLUME_UP', 'SUCCESS');
-            break;
-
-          case 'VOLUME_DOWN':
-            exec('powershell -c "$w = New-Object -ComObject wscript.shell; $w.SendKeys([char]174)"');
-            sendAck(ws, msg.id, 'VOLUME_DOWN', 'SUCCESS');
-            break;
-
-          case 'MEDIA_PLAY_PAUSE':
-            exec('powershell -c "$w = New-Object -ComObject wscript.shell; $w.SendKeys([char]179)"');
-            sendAck(ws, msg.id, 'MEDIA_PLAY_PAUSE', 'SUCCESS');
-            break;
-
-          case 'LOCK_SCREEN':
-            exec('rundll32.exe user32.dll,LockWorkStation');
-            sendAck(ws, msg.id, 'LOCK_SCREEN', 'SUCCESS');
-            break;
-
-          case 'PRESENTATION_NEXT':
-            exec('powershell -c "$w = New-Object -ComObject wscript.shell; $w.SendKeys(\'{RIGHT}\')"');
-            sendAck(ws, msg.id, 'PRESENTATION_NEXT', 'SUCCESS');
-            break;
-
-          case 'PRESENTATION_PREV':
-            exec('powershell -c "$w = New-Object -ComObject wscript.shell; $w.SendKeys(\'{LEFT}\')"');
-            sendAck(ws, msg.id, 'PRESENTATION_PREV', 'SUCCESS');
-            break;
-
-          case 'SYNC_CLIPBOARD':
-            if (msg.payload && msg.payload.text) {
-              const text = msg.payload.text;
-              const clean = text.replace(/"/g, '`"');
-              exec(`powershell -c "Set-Clipboard -Value \\"${clean}\\""`);
-              sendAck(ws, msg.id, 'SYNC_CLIPBOARD', 'SUCCESS');
-
-              // Auto-open URL if payload text starts with http/https
-              if (text.startsWith('http://') || text.startsWith('https://')) {
-                shell.openExternal(text);
-              }
-            }
-            break;
-
-          default:
-            ws.send(JSON.stringify({
-              id: msg.id || 'ack-echo',
-              type: 'ECHO_RESPONSE',
-              payload: msg.payload,
-              timestamp: Date.now(),
-              direction: 'INBOUND',
-              status: 'RECEIVED'
-            }));
-            break;
-        }
+        executeCommand(msg.type, msg.payload);
+        sendAck(ws, msg.id, msg.type, 'SUCCESS');
       } catch (err) {
         console.error('[SyncApp Error]: Mensaje corrupto recibido', err);
       }
@@ -311,13 +345,13 @@ ipcMain.on('send-clipboard-to-phone', (event, text) => {
 });
 
 ipcMain.on('lock-pc', () => {
-  exec('rundll32.exe user32.dll,LockWorkStation');
+  executeCommand('LOCK_SCREEN', {});
 });
 
 app.whenReady().then(() => {
   createWindow();
   createTray();
-  startWebSocketServer();
+  startServer();
 });
 
 app.on('window-all-closed', () => {
