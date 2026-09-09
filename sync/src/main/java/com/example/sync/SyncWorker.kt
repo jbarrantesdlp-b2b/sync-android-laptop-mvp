@@ -14,7 +14,7 @@ class SyncWorker(appContext: Context, params: WorkerParameters) : CoroutineWorke
         return try {
             prefs.setConnectionStatus("CONNECTING")
             
-            repository.connectToServer("ws://localhost:8123")
+            repository.connectToServer(SyncRepository.DEFAULT_URL)
             
             delay(2000)
             

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg9" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0B0F19"/>
+      <stop offset="100%" stop-color="#1E1B4B"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg9)"/>
+  <rect x="2" y="2" width="508" height="508" rx="110" fill="none" stroke="#312E81" stroke-width="3"/>
+
+  <!-- Prism Face Mobile (Green) -->
+  <polygon points="256,120 370,186 256,252 142,186" fill="#10B981" opacity="0.9"/>
+  <!-- Prism Face Laptop (Cyan) -->
+  <polygon points="142,186 256,252 256,384 142,318" fill="#0284C7" opacity="0.85"/>
+  <!-- Prism Face Connection (Indigo/White) -->
+  <polygon points="256,252 370,186 370,318 256,384" fill="#6366F1" opacity="0.95"/>
+</svg>

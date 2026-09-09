@@ -1,0 +1,294 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+  user-select: none;
+}
+
+body {
+  background: #0B0F19;
+  color: #E2E8F0;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+  overflow: hidden;
+}
+
+.container {
+  width: 100%;
+  max-width: 760px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Header Card */
+.header-card {
+  background: #151D2A;
+  border: 1px solid #233044;
+  border-radius: 16px;
+  padding: 14px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo-title {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.icon-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 191, 255, 0.1);
+  padding: 8px;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 191, 255, 0.3);
+  box-shadow: 0 0 12px rgba(0, 191, 255, 0.2);
+}
+
+h1 {
+  font-size: 19px;
+  font-weight: 800;
+  color: #FFFFFF;
+  letter-spacing: 1.5px;
+  text-shadow: 0 0 10px rgba(0, 191, 255, 0.4);
+}
+
+.version {
+  font-size: 10px;
+  font-weight: 700;
+  color: #94A3B8;
+  letter-spacing: 1px;
+}
+
+/* Status Pill */
+.status-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  transition: all 0.3s ease;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.status-pill.connected {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: #10B981;
+}
+
+.status-pill.connected .status-dot {
+  background: #10B981;
+  box-shadow: 0 0 8px #10B981;
+}
+
+.status-pill.disconnected {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #EF4444;
+}
+
+.status-pill.disconnected .status-dot {
+  background: #EF4444;
+}
+
+/* Dashboard Grid */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr;
+  gap: 16px;
+  flex: 1;
+}
+
+.card {
+  background: #151D2A;
+  border: 1px solid #233044;
+  border-radius: 18px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+h2 {
+  font-size: 12px;
+  font-weight: 800;
+  color: #00BFFF;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  background: #0B0F19;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid #233044;
+}
+
+.label {
+  color: #94A3B8;
+}
+
+.value {
+  font-weight: 700;
+  color: #00BFFF;
+  font-family: monospace;
+}
+
+/* QR Code Box */
+.qr-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #0B0F19;
+  border-radius: 14px;
+  padding: 12px;
+  border: 1px solid #233044;
+  flex: 1;
+}
+
+.qr-label {
+  font-size: 11px;
+  color: #94A3B8;
+  text-align: center;
+}
+
+#qr-canvas {
+  width: 140px !important;
+  height: 140px !important;
+  border-radius: 8px;
+  background: #FFFFFF;
+  padding: 6px;
+}
+
+/* Actions & Buttons */
+.quick-actions {
+  display: flex;
+  gap: 8px;
+}
+
+input[type="text"] {
+  flex: 1;
+  background: #0B0F19;
+  border: 1px solid #233044;
+  border-radius: 10px;
+  padding: 8px 12px;
+  color: #FFFFFF;
+  font-size: 12px;
+  outline: none;
+}
+
+input[type="text"]:focus {
+  border-color: #00BFFF;
+}
+
+.button-row {
+  display: flex;
+  gap: 8px;
+}
+
+.btn {
+  border: none;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.primary-btn {
+  background: #00BFFF;
+  color: #0B0F19;
+  box-shadow: 0 0 10px rgba(0, 191, 255, 0.3);
+}
+
+.primary-btn:hover {
+  background: #38BDF8;
+}
+
+.secondary-btn {
+  background: #233044;
+  color: #E2E8F0;
+  flex: 1;
+}
+
+.secondary-btn:hover {
+  background: #334155;
+}
+
+.outline-btn {
+  background: transparent;
+  border: 1px solid #233044;
+  color: #94A3B8;
+}
+
+.outline-btn:hover {
+  border-color: #38BDF8;
+  color: #E2E8F0;
+}
+
+/* Terminal Log Box */
+.terminal-box {
+  background: #0B0F19;
+  border: 1px solid #233044;
+  border-radius: 12px;
+  padding: 10px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow: hidden;
+}
+
+.terminal-header {
+  font-size: 10px;
+  font-weight: 800;
+  color: #94A3B8;
+  letter-spacing: 1px;
+}
+
+.log-content {
+  flex: 1;
+  overflow-y: auto;
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: 11px;
+  color: #00BFFF;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-right: 4px;
+}
+
+.log-item {
+  line-height: 1.4;
+  word-break: break-all;
+}
+
+.log-item.info { color: #94A3B8; }
+.log-item.connect { color: #10B981; }
+.log-item.disconnect { color: #EF4444; }
+.log-item.data { color: #00BFFF; }

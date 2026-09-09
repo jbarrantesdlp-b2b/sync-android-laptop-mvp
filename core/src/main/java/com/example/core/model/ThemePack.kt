@@ -2,8 +2,44 @@
 
 import androidx.compose.ui.graphics.Color
 
-enum class ThemePack(val primary: Color, val secondary: Color, val accent: Color) {
-    Minimal(Color(0xFF121212), Color(0xFF1E1E1E), Color(0xFFBB86FC)),
-    Neón(Color(0xFF00FFAB), Color(0xFF00D1FF), Color(0xFFFF00FF)),
-    Bancario(Color(0xFF0B3D91), Color(0xFF1E88E5), Color(0xFFB0BEC5))
+enum class ThemePack(
+    val displayName: String,
+    val background: Color,
+    val surface: Color,
+    val primary: Color,
+    val secondary: Color,
+    val textPrimary: Color,
+    val textSecondary: Color,
+    val border: Color
+) {
+    SyncEngine(
+        displayName = "Sync Engine",
+        background = Color(0xFF0B0F19),
+        surface = Color(0xFF151D2A),
+        primary = Color(0xFF00BFFF),
+        secondary = Color(0xFF8000FF),
+        textPrimary = Color(0xFFFFFFFF),
+        textSecondary = Color(0xFF94A3B8),
+        border = Color(0xFF233044)
+    ),
+    Minimal(
+        displayName = "Lumina Light",
+        background = Color(0xFFEBF0F5),
+        surface = Color(0xFFFFFFFF),
+        primary = Color(0xFF1E293B),
+        secondary = Color(0xFFF1F5F9),
+        textPrimary = Color(0xFF0F172A),
+        textSecondary = Color(0xFF64748B),
+        border = Color(0xFFE2E8F0)
+    ),
+    Neón(
+        displayName = "Cyberpunk OLED",
+        background = Color(0xFF000000),
+        surface = Color(0xFF121218),
+        primary = Color(0xFF00BFFF),
+        secondary = Color(0xFF8000FF),
+        textPrimary = Color(0xFFFFFFFF),
+        textSecondary = Color(0xFF64748B),
+        border = Color(0xFF27272A)
+    )
 }

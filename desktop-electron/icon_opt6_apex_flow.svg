@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg6" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F172A"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+    <linearGradient id="emerald6" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#34D399"/>
+      <stop offset="100%" stop-color="#10B981"/>
+    </linearGradient>
+    <linearGradient id="cyan6" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="100%" stop-color="#0284C7"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg6)"/>
+  <rect x="2" y="2" width="508" height="508" rx="110" fill="none" stroke="#334155" stroke-width="3"/>
+
+  <!-- Upper Arc Arrow (Emerald) -->
+  <path d="M 160,256 A 96,96 0 0,1 352,256" fill="none" stroke="url(#emerald6)" stroke-width="28" stroke-linecap="round"/>
+  <polygon points="352,240 376,256 352,272" fill="#10B981"/>
+
+  <!-- Lower Arc Arrow (Cyan) -->
+  <path d="M 352,256 A 96,96 0 0,1 160,256" fill="none" stroke="url(#cyan6)" stroke-width="28" stroke-linecap="round"/>
+  <polygon points="160,272 136,256 160,240" fill="#38BDF8"/>
+</svg>

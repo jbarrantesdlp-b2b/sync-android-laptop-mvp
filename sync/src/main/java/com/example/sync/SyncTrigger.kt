@@ -4,7 +4,7 @@ import android.content.Context
 import com.example.core.datastore.PreferencesManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class SyncTrigger(
@@ -46,7 +46,12 @@ class SyncTrigger(
     }
 
     private suspend fun triggerManualSync() {
-        repository.connectToServer("ws://localhost:8123")
+        val savedUrl = try {
+            prefs.serverUrlFlow.first()
+        } catch (_: Exception) {
+            SyncRepository.DEFAULT_URL
+        }
+        repository.connectToServer(savedUrl)
         repository.sendMessage(
             type = "sync_request",
             payload = "{\"timestamp\":${System.currentTimeMillis()},\"trigger\":\"connectivity_change\"}"

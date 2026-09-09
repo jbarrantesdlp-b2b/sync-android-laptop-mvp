@@ -1,186 +1,206 @@
 ﻿package com.example.syncwidget
 
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
+import androidx.glance.GlanceModifier
+import androidx.glance.ImageProvider
+import androidx.glance.action.ActionParameters
+import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.action.ActionCallback
 import androidx.glance.appwidget.action.actionRunCallback
+import androidx.glance.appwidget.action.actionStartActivity
+import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
-import androidx.glance.action.actionStartActivity
-import androidx.glance.Button
-import androidx.glance.Column
-import androidx.glance.GlanceModifier
-import androidx.glance.LocalContext
-import androidx.glance.Row
-import androidx.glance.Spacer
-import androidx.glance.Text
 import androidx.glance.background
 import androidx.glance.layout.Alignment
-import androidx.glance.layout.Arrangement
+import androidx.glance.layout.Column
+import androidx.glance.layout.Row
+import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
 import androidx.glance.layout.padding
+import androidx.glance.layout.width
 import androidx.glance.text.FontWeight
+import androidx.glance.text.Text
+import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
-import androidx.glance.unit.Dp
-import androidx.glance.unit.TextUnit
 import com.example.core.datastore.PreferencesManager
 import com.example.sync.SyncRepository
-import com.example.syncapp.MainActivity
 import kotlinx.coroutines.flow.first
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 
-object SyncGlanceWidget : GlanceAppWidget(sizeMode = SizeMode.Responsive) {
+@Suppress("RestrictedApi")
+object SyncGlanceWidget : GlanceAppWidget() {
 
-    override suspend fun provideContent(context: Context, id: GlanceId) {
+    override val sizeMode: SizeMode = SizeMode.Single
+
+    override suspend fun provideGlance(context: Context, id: GlanceId) {
+        val prefs = PreferencesManager(context)
+        val connectionStatus = try {
+            prefs.connectionStatusFlow.first()
+        } catch (_: Exception) {
+            "UNKNOWN"
+        }
+
+        val serverUrl = try {
+            prefs.serverUrlFlow.first()
+        } catch (_: Exception) {
+            "ws://192.168.1.54:8123"
+        }
+
+        // Time and Date Formatting
+        val calendar = Calendar.getInstance()
+        val timeFormat = SimpleDateFormat("HH:mm", Locale("es", "ES"))
+        val timeString = timeFormat.format(calendar.time)
+
+        val dateFormat = SimpleDateFormat("EEEE, MMMM d", Locale("es", "ES"))
+        val dateFormatted = dateFormat.format(calendar.time).uppercase()
+
+        // Status mapping matching reference Image 1
+        val (statusTitle, statusSub, badgeDrawable, statusColor) = when (connectionStatus) {
+            "CONNECTED" -> Quadruple("CONECTADA", "En vivo", R.drawable.widget_badge_green, Color(0xFF10B981))
+            "CONNECTING" -> Quadruple("CONECTANDO", "Buscando...", R.drawable.widget_badge_yellow, Color(0xFFF59E0B))
+            else -> Quadruple("DESCONECTADA", "Sin enlace", R.drawable.widget_badge_red, Color(0xFFEF4444))
+        }
+
+        val mainActivityIntent = Intent().apply {
+            component = ComponentName("com.example.syncapp", "com.example.syncapp.MainActivity")
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+
         provideContent {
-            val ctx = LocalContext.current
-            val prefs = PreferencesManager(ctx)
-            val repository = SyncRepository(ctx)
-
-            val connectionStatus = try {
-                prefs.connectionStatusFlow.first()
-            } catch (e: Exception) {
-                "UNKNOWN"
-            }
-
-            val statusIcon = when (connectionStatus) {
-                "CONNECTED" -> "🟢"
-                "CONNECTING" -> "🟡"
-                "DISCONNECTED" -> "🔴"
-                else -> "⚪"
-            }
-
             Column(
                 modifier = GlanceModifier
                     .fillMaxSize()
-                    .background(0xFFFAFAFA.toInt())
-                    .padding(Dp(12f)),
-                verticalAlignment = Alignment.Top
+                    .background(ImageProvider(R.drawable.widget_bg_transparent_glass))
+                    .cornerRadius(20.dp)
+                    .padding(12.dp)
+                    .clickable(actionStartActivity(mainActivityIntent)),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Header
-                Row(
-                    modifier = GlanceModifier
-                        .fillMaxWidth()
-                        .padding(bottom = Dp(8f)),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "📱 Sync Status",
-                        style = TextStyle(
-                            fontSize = TextUnit.Sp(16),
-                            fontWeight = FontWeight.Bold,
-                            color = ColorProvider(android.graphics.Color.valueOf(0xFF212121))
-                        )
-                    )
-                }
-
-                // Status Box
-                Row(
-                    modifier = GlanceModifier
-                        .fillMaxWidth()
-                        .background(0xFFEEEEEE.toInt())
-                        .padding(Dp(8f)),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(Dp(8f))
-                ) {
-                    Text(
-                        text = statusIcon,
-                        style = TextStyle(fontSize = TextUnit.Sp(20))
-                    )
-                    Column(modifier = GlanceModifier.defaultWeight()) {
-                        Text(
-                            text = connectionStatus.replace("_", " "),
-                            style = TextStyle(
-                                fontSize = TextUnit.Sp(13),
-                                fontWeight = FontWeight.Bold
-                            )
-                        )
-                        Text(
-                            text = "Last sync: now",
-                            style = TextStyle(fontSize = TextUnit.Sp(10))
-                        )
-                    }
-                }
-
-                Spacer(modifier = GlanceModifier.height(Dp(8f)))
-
-                // Action Buttons
+                // Top Header Row: Title + Refresh Icon in Top-Right Corner
                 Row(
                     modifier = GlanceModifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(Dp(6f))
+                    horizontalAlignment = Alignment.End,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Button(
-                        text = "📊 Open",
-                        onClick = actionStartActivity(
-                            Intent(ctx, MainActivity::class.java).apply {
-                                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                            }
+                    Text(
+                        text = "SYNC ENGINE",
+                        style = TextStyle(
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = ColorProvider(Color(0xFF94A3B8)),
+                            textAlign = TextAlign.Start
                         ),
-                        modifier = GlanceModifier
-                            .defaultWeight()
-                            .padding(Dp(4f))
+                        modifier = GlanceModifier.defaultWeight()
                     )
-                    Button(
-                        text = "🔄 Sync",
-                        onClick = actionRunCallback<ManualSyncAction>(),
-                        modifier = GlanceModifier
-                            .defaultWeight()
-                            .padding(Dp(4f))
+
+                    // ↻ Refresh Action Button
+                    Text(
+                        text = "↻",
+                        style = TextStyle(
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = ColorProvider(Color.White),
+                            textAlign = TextAlign.Center
+                        ),
+                        modifier = GlanceModifier.clickable(actionRunCallback<ManualSyncAction>())
                     )
                 }
 
-                Spacer(modifier = GlanceModifier.height(Dp(6f)))
+                Spacer(modifier = GlanceModifier.height(2.dp))
 
-                // Stats Row
+                // Large Thin Digital Clock (Image 1 Style: 09:53)
+                Text(
+                    text = timeString,
+                    style = TextStyle(
+                        fontSize = 52.sp,
+                        fontWeight = FontWeight.Normal,
+                        color = ColorProvider(Color.White),
+                        textAlign = TextAlign.Center
+                    )
+                )
+
+                // UPPERCASE Date (Image 1 Style: VIERNES, MARZO 26)
+                Text(
+                    text = dateFormatted,
+                    style = TextStyle(
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = ColorProvider(Color(0xFFE2E8F0)),
+                        textAlign = TextAlign.Center
+                    )
+                )
+
+                Spacer(modifier = GlanceModifier.height(8.dp))
+
+                // Bottom Status Row (Image 1 Style: Location/Info + Badge + Stat)
                 Row(
-                    modifier = GlanceModifier
-                        .fillMaxWidth()
-                        .background(0xFFF5F5F5.toInt())
-                        .padding(Dp(6f)),
-                    horizontalArrangement = Arrangement.spacedBy(Dp(8f))
+                    modifier = GlanceModifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Column(modifier = GlanceModifier.defaultWeight()) {
+                    // Left Column: PC Host Info
+                    Column(horizontalAlignment = Alignment.Start) {
                         Text(
-                            text = "0",
+                            text = "Laptop PC",
                             style = TextStyle(
-                                fontSize = TextUnit.Sp(14),
-                                fontWeight = FontWeight.Bold
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = ColorProvider(Color.White)
                             )
                         )
                         Text(
-                            text = "Pending",
-                            style = TextStyle(fontSize = TextUnit.Sp(9))
+                            text = if (serverUrl.length > 20) "Port 8123" else serverUrl.replace("ws://", ""),
+                            style = TextStyle(
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Normal,
+                                color = ColorProvider(Color(0xFFCBD5E1))
+                            )
                         )
                     }
-                    Column(modifier = GlanceModifier.defaultWeight()) {
+
+                    Spacer(modifier = GlanceModifier.defaultWeight())
+
+                    // Center Badge Circle
+                    Row(
+                        modifier = GlanceModifier
+                            .background(ImageProvider(badgeDrawable))
+                            .padding(6.dp)
+                    ) {}
+
+                    Spacer(modifier = GlanceModifier.width(6.dp))
+
+                    // Right Column: Status & Subtitle
+                    Column(horizontalAlignment = Alignment.End) {
                         Text(
-                            text = "0",
+                            text = statusTitle,
                             style = TextStyle(
-                                fontSize = TextUnit.Sp(14),
-                                fontWeight = FontWeight.Bold
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = ColorProvider(statusColor)
                             )
                         )
                         Text(
-                            text = "Synced",
-                            style = TextStyle(fontSize = TextUnit.Sp(9))
-                        )
-                    }
-                    Column(modifier = GlanceModifier.defaultWeight()) {
-                        Text(
-                            text = "15min",
+                            text = statusSub,
                             style = TextStyle(
-                                fontSize = TextUnit.Sp(14),
-                                fontWeight = FontWeight.Bold
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Normal,
+                                color = ColorProvider(Color(0xFFCBD5E1))
                             )
-                        )
-                        Text(
-                            text = "Next sync",
-                            style = TextStyle(fontSize = TextUnit.Sp(9))
                         )
                     }
                 }
@@ -189,13 +209,24 @@ object SyncGlanceWidget : GlanceAppWidget(sizeMode = SizeMode.Responsive) {
     }
 }
 
+private data class Quadruple<A, B, C, D>(
+    val first: A,
+    val second: B,
+    val third: C,
+    val fourth: D
+)
+
 class ManualSyncAction : ActionCallback {
-    override suspend fun onAction(context: Context, glanceId: GlanceId) {
+    override suspend fun onAction(
+        context: Context,
+        glanceId: GlanceId,
+        parameters: ActionParameters
+    ) {
         try {
             val repository = SyncRepository(context)
             repository.triggerManualSync()
-        } catch (e: Exception) {
-            // Sync trigger failed silently
+        } catch (_: Exception) {
+            // Sync trigger handled
         }
     }
 }

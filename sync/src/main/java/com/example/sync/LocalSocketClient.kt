@@ -63,10 +63,13 @@ class LocalSocketClient(
     }
 
     private suspend fun scheduleReconnect() {
+        if (!scope.isActive) return
         reconnectAttempts++
-        val backoff = (Math.pow(2.0, reconnectAttempts.toDouble()) * 1000).toLong().coerceAtMost(maxBackoffMs)
+        val backoff = (Math.pow(2.0, reconnectAttempts.toDouble()) * 1500).toLong().coerceIn(3000L, maxBackoffMs)
         delay(backoff)
-        ensureConnect()
+        if (scope.isActive) {
+            ensureConnect()
+        }
     }
 
     fun send(text: String): Boolean {

@@ -4,11 +4,13 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.core.datastore.PreferencesManager
+import com.example.sync.SyncRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 
-class SyncViewModel(context: Context) : ViewModel() {
+class SyncViewModel(private val context: Context) : ViewModel() {
     private val prefs = PreferencesManager(context)
+    private val repository = SyncRepository(context, prefs)
 
     val connectionStatusFlow = prefs.connectionStatusFlow
         .stateIn(viewModelScope, SharingStarted.Lazily, "UNKNOWN")
@@ -17,6 +19,6 @@ class SyncViewModel(context: Context) : ViewModel() {
         .stateIn(viewModelScope, SharingStarted.Lazily, com.example.core.model.ThemePack.Minimal)
 
     fun triggerManualSync() {
-        // Enqueue immediate sync work
+        repository.triggerManualSync()
     }
 }

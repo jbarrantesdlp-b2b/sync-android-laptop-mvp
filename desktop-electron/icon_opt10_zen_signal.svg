@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg10" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#020617"/>
+      <stop offset="100%" stop-color="#0F172A"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg10)"/>
+  <rect x="2" y="2" width="508" height="508" rx="110" fill="none" stroke="#1E293B" stroke-width="3"/>
+
+  <!-- Zen Minimal Signal Bars -->
+  <rect x="140" y="200" width="232" height="24" rx="12" fill="#38BDF8"/>
+  <rect x="180" y="244" width="152" height="24" rx="12" fill="#10B981"/>
+  <rect x="220" y="288" width="72" height="24" rx="12" fill="#FFFFFF"/>
+</svg>

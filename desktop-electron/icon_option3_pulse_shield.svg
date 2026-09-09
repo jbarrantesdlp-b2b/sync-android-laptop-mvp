@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0B0F19"/>
+      <stop offset="100%" stop-color="#1E1B4B"/>
+    </linearGradient>
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366F1"/>
+      <stop offset="100%" stop-color="#4F46E5"/>
+    </linearGradient>
+    <filter id="glow3" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="10" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Background Card -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad3)"/>
+  <rect x="2" y="2" width="508" height="508" rx="110" fill="none" stroke="#6366F1" stroke-opacity="0.3" stroke-width="3"/>
+
+  <!-- Geometric Shield Path -->
+  <path d="M 256,90 C 330,90 390,120 390,120 V 270 C 390,360 256,430 256,430 C 256,430 122,360 122,270 V 120 C 122,120 182,90 256,90 Z" fill="url(#shieldGrad)" opacity="0.85" filter="url(#glow3)"/>
+
+  <!-- Twin Connection Nodes (Mobile & Laptop) -->
+  <circle cx="206" cy="240" r="22" fill="#10B981" />
+  <circle cx="306" cy="240" r="22" fill="#38BDF8" />
+
+  <!-- Connecting Bridge Bar -->
+  <rect x="206" y="232" width="100" height="16" rx="8" fill="#FFFFFF" opacity="0.9" />
+  <circle cx="256" cy="240" r="12" fill="#10B981" />
+</svg>

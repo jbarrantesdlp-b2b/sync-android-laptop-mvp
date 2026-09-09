@@ -1,74 +1,38 @@
 ﻿package com.example.syncwidget
 
 import android.content.Context
-import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.updateAll
 import androidx.work.Constraints
+import androidx.work.CoroutineWorker
 import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
-import androidx.work.Worker
 import androidx.work.WorkerParameters
 import androidx.work.WorkManager
 import com.example.core.datastore.PreferencesManager
-import com.example.sync.SyncRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import java.util.concurrent.TimeUnit
 
 class WidgetUpdateObserver(private val context: Context) {
     private val prefs = PreferencesManager(context)
-    private val repository = SyncRepository(context)
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     fun startObserving() {
-        // Listen to connection status changes
-        scope.launch {
-            prefs.connectionStatusFlow
-                .debounce(300)
-                .collect {
-                    updateWidget()
-                }
-        }
-
-        // Listen to message flow changes
-        scope.launch {
-            repository.messageFlow
-                .debounce(500)
-                .collect {
-                    updateWidget()
-                }
-        }
-
-        // Listen to theme changes
-        scope.launch {
-            prefs.themePackFlow
-                .debounce(300)
-                .collect {
-                    updateWidget()
-                }
-        }
-
-        // Combined observation for multiple changes
         scope.launch {
             combine(
                 prefs.connectionStatusFlow,
-                prefs.themePackFlow,
-                repository.messageFlow
-            ) { status, theme, _ ->
+                prefs.themePackFlow
+            ) { status, theme ->
                 Pair(status, theme)
+            }.collect {
+                updateWidget()
             }
-                .debounce(500)
-                .collect {
-                    updateWidget()
-                }
         }
 
-        // Schedule periodic widget updates every 5 minutes
         schedulePeriodicWidgetUpdates()
     }
 
@@ -78,13 +42,16 @@ class WidgetUpdateObserver(private val context: Context) {
 
     private fun updateWidget() {
         scope.launch {
-            SyncGlanceWidget.updateAll(context)
+            try {
+                SyncGlanceWidget.updateAll(context)
+            } catch (_: Exception) {
+            }
         }
     }
 
     private fun schedulePeriodicWidgetUpdates() {
         val updateRequest = PeriodicWorkRequestBuilder<WidgetUpdateWorker>(
-            5, TimeUnit.MINUTES
+            15, TimeUnit.MINUTES
         )
             .setConstraints(
                 Constraints.Builder()
@@ -100,8 +67,7 @@ class WidgetUpdateObserver(private val context: Context) {
                     androidx.work.ExistingPeriodicWorkPolicy.KEEP,
                     updateRequest
                 )
-        } catch (e: Exception) {
-            // WorkManager may not be available in all contexts
+        } catch (_: Exception) {
         }
     }
 }
@@ -109,14 +75,12 @@ class WidgetUpdateObserver(private val context: Context) {
 class WidgetUpdateWorker(
     context: Context,
     params: WorkerParameters
-) : Worker(context, params) {
-    override fun doWork(): Result {
+) : CoroutineWorker(context, params) {
+    override suspend fun doWork(): Result {
         return try {
-            runBlocking {
-                SyncGlanceWidget.updateAll(applicationContext)
-            }
+            SyncGlanceWidget.updateAll(applicationContext)
             Result.success()
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             Result.retry()
         }
     }

@@ -1,3 +1,20 @@
-"jdk17/" 
-"jdk17/" 
-"jdk17/" 
+# Android & Gradle
+.gradle/
+build/
+*/build/
+*.apk
+*.aab
+local.properties
+.idea/
+*.iml
+.DS_Store
+
+# Node & Desktop Electron
+desktop-electron/node_modules/
+desktop-electron/dist/
+desktop-electron/*.bak
+package-lock.json
+
+# Archivos temporales de sistema y terminal
+set
+*.log

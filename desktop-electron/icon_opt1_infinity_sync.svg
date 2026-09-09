@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0B0F19"/>
+      <stop offset="100%" stop-color="#151D2A"/>
+    </linearGradient>
+    <linearGradient id="infGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10B981"/>
+      <stop offset="50%" stop-color="#06B6D4"/>
+      <stop offset="100%" stop-color="#3B82F6"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg1)"/>
+  <rect x="2" y="2" width="508" height="508" rx="110" fill="none" stroke="#233044" stroke-width="3"/>
+
+  <!-- Infinity Path -->
+  <path d="M 256,256 C 200,180 120,180 120,256 C 120,332 200,332 256,256 C 312,180 392,180 392,256 C 392,332 312,332 256,256 Z"
+        fill="none" stroke="url(#infGrad)" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
