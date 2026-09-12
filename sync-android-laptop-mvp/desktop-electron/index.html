@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>SYNC ENGINE — By Barrantes Co.</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header Card -->
+    <header class="header-card">
+      <div class="logo-title">
+        <div class="icon-box">
+          <svg width="28" height="28" viewBox="0 0 108 108" fill="none">
+            <path d="M 38,36 C 52,36 58,46 54,54 C 50,62 38,62 38,72 C 38,80 50,80 62,72 C 74,64 80,48 66,42 C 52,36 38,36 38,36 Z"
+                  stroke="url(#cyanPurpleGrad)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="54" cy="54" r="5" fill="#FFFFFF"/>
+            <defs>
+              <linearGradient id="cyanPurpleGrad" x1="0" y1="0" x2="108" y2="108" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#00BFFF"/>
+                <stop offset="50%" stop-color="#38BDF8"/>
+                <stop offset="100%" stop-color="#8000FF"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div>
+          <h1>SYNC ENGINE</h1>
+          <span class="version">BY BARRANTES CO. • Control & Integración</span>
+        </div>
+      </div>
+      <div id="status-pill" class="status-pill disconnected">
+        <span class="status-dot"></span>
+        <span id="status-text">Desconectado</span>
+      </div>
+    </header>
+
+    <!-- Main Grid -->
+    <div class="dashboard-grid">
+      <!-- Left Column: Connection Info & QR Code -->
+      <div class="card card-left">
+        <h2>📱 Vinculación & Estado</h2>
+        <div class="info-row">
+          <span class="label">Dispositivo:</span>
+          <span id="device-name" class="value">Buscando celular...</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Servidor IP:</span>
+          <span id="server-url" class="value">Cargando...</span>
+        </div>
+
+        <div class="qr-container">
+          <p class="qr-label">Escanea con la cámara de Sync Engine:</p>
+          <canvas id="qr-canvas"></canvas>
+        </div>
+      </div>
+
+      <!-- Right Column: Controls & Log -->
+      <div class="card card-right">
+        <h2>⚡ Control & Eventos</h2>
+
+        <div class="quick-actions">
+          <input type="text" id="clipboard-input" placeholder="Escribe texto o URL para enviar al celular..." />
+          <button id="send-clipboard-btn" class="btn primary-btn">📋 Enviar a Celular</button>
+        </div>
+
+        <div class="button-row">
+          <button id="lock-btn" class="btn secondary-btn">🔒 Bloquear PC</button>
+          <button id="clear-log-btn" class="btn outline-btn">🧹 Limpiar Log</button>
+        </div>
+
+        <div class="terminal-box">
+          <div class="terminal-header">REGISTRO DE EVENTOS EN TIEMPO REAL</div>
+          <div id="log-content" class="log-content"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

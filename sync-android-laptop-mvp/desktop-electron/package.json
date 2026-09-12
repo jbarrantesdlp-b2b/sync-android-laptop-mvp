@@ -1,0 +1,30 @@
+{
+  "name": "syncapp-desktop",
+  "version": "1.0.0",
+  "description": "SyncApp Desktop Integration for Windows",
+  "author": "SyncApp",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win portable"
+  },
+  "build": {
+    "appId": "com.example.syncappdesktop",
+    "productName": "SyncApp Desktop",
+    "win": {
+      "target": ["portable"]
+    },
+    "directories": {
+      "output": "dist"
+    }
+  },
+  "dependencies": {
+    "qrcode": "^1.5.4",
+    "qrcode-terminal": "^0.12.0",
+    "ws": "^8.13.0"
+  },
+  "devDependencies": {
+    "electron": "^44.2.0",
+    "electron-builder": "^26.2.1"
+  }
+}

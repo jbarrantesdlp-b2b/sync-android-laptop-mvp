@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgDark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="100%" stop-color="#0B0F19"/>
+    </linearGradient>
+
+    <!-- Metallic Silver 3D Bevel Gradient -->
+    <linearGradient id="metalBevel" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="25%" stop-color="#94A3B8"/>
+      <stop offset="50%" stop-color="#334155"/>
+      <stop offset="75%" stop-color="#CBD5E1"/>
+      <stop offset="100%" stop-color="#64748B"/>
+    </linearGradient>
+
+    <!-- Inner Plasma Electric Energy Gradient -->
+    <linearGradient id="plasmaEnergy" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00F0FF"/>
+      <stop offset="40%" stop-color="#00BFFF"/>
+      <stop offset="70%" stop-color="#38BDF8"/>
+      <stop offset="100%" stop-color="#8000FF"/>
+    </linearGradient>
+
+    <!-- Glow Effect -->
+    <filter id="plasmaGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="12" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Pitch Black Card Base -->
+  <rect width="512" height="512" rx="112" fill="url(#bgDark)"/>
+
+  <g transform="translate(0, -20)">
+    <!-- Outer Metallic 3D Silver Bevel Frame -->
+    <path d="M 190,140 C 260,140 280,180 260,220 L 220,300 C 190,360 260,400 320,400 C 400,400 440,320 380,240 C 320,160 220,140 190,140 Z"
+          fill="none" stroke="url(#metalBevel)" stroke-width="44" stroke-linecap="square" stroke-linejoin="miter"/>
+
+    <!-- Inner Electric Plasma Core -->
+    <path d="M 190,140 C 260,140 280,180 260,220 L 220,300 C 190,360 260,400 320,400 C 400,400 440,320 380,240 C 320,160 220,140 190,140 Z"
+          fill="none" stroke="url(#plasmaEnergy)" stroke-width="22" stroke-linecap="square" stroke-linejoin="miter" filter="url(#plasmaGlow)"/>
+
+    <!-- Specular Highlight Curve -->
+    <path d="M 190,140 L 255,140 M 220,300 L 320,400" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" opacity="0.9"/>
+  </g>
+
+  <!-- Official Brand Typography: SYNC ENGINE -->
+  <text x="256" y="420" font-family="'Segoe UI', 'Roboto', sans-serif" font-weight="900" font-size="34" fill="#00F0FF" text-anchor="middle" letter-spacing="4">SYNC ENGINE</text>
+
+  <!-- Sub-label: BY BARRANTES CO. -->
+  <text x="256" y="455" font-family="'Segoe UI', 'Roboto', sans-serif" font-weight="700" font-size="14" fill="#FFFFFF" text-anchor="middle" letter-spacing="3" opacity="0.9">BY BARRANTES CO.</text>
+</svg>

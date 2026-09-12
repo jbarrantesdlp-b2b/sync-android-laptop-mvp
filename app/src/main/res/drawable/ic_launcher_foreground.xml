@@ -6,29 +6,55 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Official SYNC ENGINE S + Infinity Hybrid Monogram Path -->
+    <!-- Outer 3D Metallic Silver Bevel Frame -->
     <path
-        android:pathData="M 38,36 C 52,36 58,46 54,54 C 50,62 38,62 38,72 C 38,80 50,80 62,72 C 74,64 80,48 66,42 C 52,36 38,36 38,36 Z"
-        android:strokeWidth="6"
+        android:pathData="M 38,28 C 58,28 62,38 58,46 L 48,64 C 40,78 56,86 70,86 C 88,86 96,68 82,50 C 70,32 50,28 38,28 Z"
+        android:strokeWidth="10"
         android:fillColor="#00000000"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round">
+        android:strokeLineCap="square"
+        android:strokeLineJoin="miter">
         <aapt:attr name="android:strokeColor">
             <gradient
-                android:startX="20"
-                android:startY="20"
-                android:endX="90"
-                android:endY="90"
+                android:startX="10"
+                android:startY="10"
+                android:endX="98"
+                android:endY="98"
                 android:type="linear">
-                <item android:offset="0.0" android:color="#00BFFF" />
-                <item android:offset="0.5" android:color="#38BDF8" />
+                <item android:offset="0.0" android:color="#FFFFFF" />
+                <item android:offset="0.3" android:color="#94A3B8" />
+                <item android:offset="0.6" android:color="#334155" />
+                <item android:offset="1.0" android:color="#CBD5E1" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Inner Electric Plasma Core -->
+    <path
+        android:pathData="M 38,28 C 58,28 62,38 58,46 L 48,64 C 40,78 56,86 70,86 C 88,86 96,68 82,50 C 70,32 50,28 38,28 Z"
+        android:strokeWidth="5"
+        android:fillColor="#00000000"
+        android:strokeLineCap="square"
+        android:strokeLineJoin="miter">
+        <aapt:attr name="android:strokeColor">
+            <gradient
+                android:startX="10"
+                android:startY="10"
+                android:endX="98"
+                android:endY="98"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#00F0FF" />
+                <item android:offset="0.5" android:color="#00BFFF" />
+                <item android:offset="0.8" android:color="#38BDF8" />
                 <item android:offset="1.0" android:color="#8000FF" />
             </gradient>
         </aapt:attr>
     </path>
 
-    <!-- Core Plasma Pulse Dot -->
+    <!-- Specular Highlight Curve -->
     <path
-        android:pathData="M54,54m-4,0a4,4 0 1,0 8,0a4,4 0 1,0 -8,0"
-        android:fillColor="#FFFFFF" />
+        android:pathData="M 38,28 L 54,28 M 48,64 L 70,86"
+        android:strokeWidth="2"
+        android:strokeColor="#FFFFFF"
+        android:fillColor="#00000000"
+        android:strokeLineCap="round" />
 </vector>

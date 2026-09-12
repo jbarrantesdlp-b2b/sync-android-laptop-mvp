@@ -11,17 +11,29 @@
     <header class="header-card">
       <div class="logo-title">
         <div class="icon-box">
-          <svg width="28" height="28" viewBox="0 0 108 108" fill="none">
-            <path d="M 38,36 C 52,36 58,46 54,54 C 50,62 38,62 38,72 C 38,80 50,80 62,72 C 74,64 80,48 66,42 C 52,36 38,36 38,36 Z"
-                  stroke="url(#cyanPurpleGrad)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
-            <circle cx="54" cy="54" r="5" fill="#FFFFFF"/>
+          <svg width="32" height="32" viewBox="0 0 108 108" fill="none">
             <defs>
-              <linearGradient id="cyanPurpleGrad" x1="0" y1="0" x2="108" y2="108" gradientUnits="userSpaceOnUse">
-                <stop offset="0%" stop-color="#00BFFF"/>
-                <stop offset="50%" stop-color="#38BDF8"/>
+              <linearGradient id="metalBevelGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#FFFFFF"/>
+                <stop offset="30%" stop-color="#94A3B8"/>
+                <stop offset="60%" stop-color="#334155"/>
+                <stop offset="100%" stop-color="#CBD5E1"/>
+              </linearGradient>
+              <linearGradient id="cyanPurplePlasma" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#00F0FF"/>
+                <stop offset="40%" stop-color="#00BFFF"/>
+                <stop offset="80%" stop-color="#38BDF8"/>
                 <stop offset="100%" stop-color="#8000FF"/>
               </linearGradient>
             </defs>
+            <!-- 3D Metallic Silver Frame -->
+            <path d="M 38,28 C 58,28 62,38 58,46 L 48,64 C 40,78 56,86 70,86 C 88,86 96,68 82,50 C 70,32 50,28 38,28 Z"
+                  stroke="url(#metalBevelGrad)" stroke-width="10" stroke-linecap="square" stroke-linejoin="miter"/>
+            <!-- Inner Plasma Electric Core -->
+            <path d="M 38,28 C 58,28 62,38 58,46 L 48,64 C 40,78 56,86 70,86 C 88,86 96,68 82,50 C 70,32 50,28 38,28 Z"
+                  stroke="url(#cyanPurplePlasma)" stroke-width="5" stroke-linecap="square" stroke-linejoin="miter"/>
+            <!-- Specular Highlight -->
+            <path d="M 38,28 L 54,28 M 48,64 L 70,86" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
           </svg>
         </div>
         <div>

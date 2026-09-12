@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F172A"/>
+      <stop offset="100%" stop-color="#1E293B"/>
+    </linearGradient>
+    <linearGradient id="emeraldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34D399"/>
+      <stop offset="100%" stop-color="#10B981"/>
+    </linearGradient>
+    <linearGradient id="cyanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="100%" stop-color="#0284C7"/>
+    </linearGradient>
+    <filter id="glow1" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="12" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Background Card -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad1)"/>
+  <rect x="2" y="2" width="508" height="512" rx="110" fill="none" stroke="#FFFFFF" stroke-opacity="0.15" stroke-width="3"/>
+
+  <!-- Left Ring (Mobile Emerald) -->
+  <circle cx="196" cy="256" r="80" fill="none" stroke="url(#emeraldGrad)" stroke-width="28" stroke-linecap="round" filter="url(#glow1)"/>
+
+  <!-- Right Ring (Laptop Cyan) -->
+  <circle cx="316" cy="256" r="80" fill="none" stroke="url(#cyanGrad)" stroke-width="28" stroke-linecap="round" filter="url(#glow1)"/>
+
+  <!-- Central Wave Pulse -->
+  <path d="M 120,280 C 196,190 316,322 392,232" fill="none" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round" opacity="0.9"/>
+</svg>

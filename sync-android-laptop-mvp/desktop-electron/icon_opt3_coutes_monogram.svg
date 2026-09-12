@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg3" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#020617"/>
+      <stop offset="100%" stop-color="#0F172A"/>
+    </linearGradient>
+    <linearGradient id="coutesGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#94A3B8"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg3)"/>
+  <rect x="2" y="2" width="508" height="508" rx="110" fill="none" stroke="#1E293B" stroke-width="3"/>
+
+  <!-- Elegant Precision 'C' Monogram Line -->
+  <path d="M 350,180 C 260,120 150,180 150,256 C 150,332 260,392 350,332"
+        fill="none" stroke="url(#coutesGrad)" stroke-width="32" stroke-linecap="round"/>
+  <circle cx="350" cy="180" r="18" fill="#10B981"/>
+</svg>
