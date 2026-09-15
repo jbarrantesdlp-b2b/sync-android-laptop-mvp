@@ -1,4 +1,4 @@
-﻿package com.example.syncwidget
+package com.example.syncwidget
 
 import android.content.ComponentName
 import android.content.Context
@@ -8,6 +8,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
+import androidx.glance.Image
 import androidx.glance.ImageProvider
 import androidx.glance.action.ActionParameters
 import androidx.glance.action.clickable
@@ -28,6 +29,7 @@ import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
 import androidx.glance.layout.padding
+import androidx.glance.layout.size
 import androidx.glance.layout.width
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
@@ -54,25 +56,28 @@ object SyncGlanceWidget : GlanceAppWidget() {
             "UNKNOWN"
         }
 
-        val serverUrl = try {
-            prefs.serverUrlFlow.first()
-        } catch (_: Exception) {
-            "ws://192.168.1.54:8123"
-        }
-
-        // Time and Date Formatting
         val calendar = Calendar.getInstance()
-        val timeFormat = SimpleDateFormat("HH:mm", Locale("es", "ES"))
-        val timeString = timeFormat.format(calendar.time)
+        val timeString = SimpleDateFormat("HH:mm", Locale("es", "ES")).format(calendar.time)
+        val dateFormatted = SimpleDateFormat("EEE, d MMM", Locale("es", "ES"))
+            .format(calendar.time)
+            .replaceFirstChar { it.uppercase() }
 
-        val dateFormat = SimpleDateFormat("EEEE, MMMM d", Locale("es", "ES"))
-        val dateFormatted = dateFormat.format(calendar.time).uppercase()
-
-        // Status mapping matching reference Image 1
-        val (statusTitle, statusSub, badgeDrawable, statusColor) = when (connectionStatus) {
-            "CONNECTED" -> Quadruple("CONECTADA", "En vivo", R.drawable.widget_badge_green, Color(0xFF10B981))
-            "CONNECTING" -> Quadruple("CONECTANDO", "Buscando...", R.drawable.widget_badge_yellow, Color(0xFFF59E0B))
-            else -> Quadruple("DESCONECTADA", "Sin enlace", R.drawable.widget_badge_red, Color(0xFFEF4444))
+        val connected = connectionStatus == "CONNECTED"
+        val connecting = connectionStatus == "CONNECTING"
+        val statusTitle = when {
+            connected -> "Conectado"
+            connecting -> "Conectando"
+            else -> "Sin enlace"
+        }
+        val statusColor = when {
+            connected -> Color(0xFF34D399)
+            connecting -> Color(0xFFFBBF24)
+            else -> Color(0xFFFB7185)
+        }
+        val badgeDrawable = when {
+            connected -> R.drawable.widget_badge_green
+            connecting -> R.drawable.widget_badge_yellow
+            else -> R.drawable.widget_badge_red
         }
 
         val mainActivityIntent = Intent().apply {
@@ -84,137 +89,97 @@ object SyncGlanceWidget : GlanceAppWidget() {
             Column(
                 modifier = GlanceModifier
                     .fillMaxSize()
-                    .background(ImageProvider(R.drawable.widget_bg_transparent_glass))
-                    .cornerRadius(20.dp)
+                    .background(ImageProvider(R.drawable.widget_bg_dark_glass))
+                    .cornerRadius(24.dp)
                     .padding(12.dp)
                     .clickable(actionStartActivity(mainActivityIntent)),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Top Header Row: Title + Refresh Icon in Top-Right Corner
                 Row(
                     modifier = GlanceModifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.End,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    Image(
+                        provider = ImageProvider(R.drawable.ic_sync_mark),
+                        contentDescription = "Sync Engine",
+                        modifier = GlanceModifier.size(28.dp)
+                    )
+                    Spacer(GlanceModifier.width(8.dp))
                     Text(
                         text = "SYNC ENGINE",
                         style = TextStyle(
                             fontSize = 9.sp,
                             fontWeight = FontWeight.Bold,
-                            color = ColorProvider(Color(0xFF94A3B8)),
-                            textAlign = TextAlign.Start
+                            color = ColorProvider(Color(0xFF67E8F9))
                         ),
                         modifier = GlanceModifier.defaultWeight()
                     )
-
-                    // ↻ Refresh Action Button
                     Text(
-                        text = "↻",
+                        text = "\u21bb",
                         style = TextStyle(
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
-                            color = ColorProvider(Color.White),
-                            textAlign = TextAlign.Center
+                            color = ColorProvider(Color.White)
                         ),
                         modifier = GlanceModifier.clickable(actionRunCallback<ManualSyncAction>())
                     )
                 }
 
-                Spacer(modifier = GlanceModifier.height(2.dp))
+                Spacer(modifier = GlanceModifier.height(4.dp))
 
-                // Large Thin Digital Clock (Image 1 Style: 09:53)
                 Text(
                     text = timeString,
                     style = TextStyle(
-                        fontSize = 52.sp,
-                        fontWeight = FontWeight.Normal,
+                        fontSize = 36.sp,
+                        fontWeight = FontWeight.Bold,
                         color = ColorProvider(Color.White),
                         textAlign = TextAlign.Center
                     )
                 )
-
-                // UPPERCASE Date (Image 1 Style: VIERNES, MARZO 26)
                 Text(
                     text = dateFormatted,
                     style = TextStyle(
-                        fontSize = 10.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        color = ColorProvider(Color(0xFFE2E8F0)),
+                        color = ColorProvider(Color(0xFF94A3B8)),
                         textAlign = TextAlign.Center
                     )
                 )
 
                 Spacer(modifier = GlanceModifier.height(8.dp))
 
-                // Bottom Status Row (Image 1 Style: Location/Info + Badge + Stat)
                 Row(
                     modifier = GlanceModifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Left Column: PC Host Info
-                    Column(horizontalAlignment = Alignment.Start) {
-                        Text(
-                            text = "Laptop PC",
-                            style = TextStyle(
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = ColorProvider(Color.White)
-                            )
+                    Image(
+                        provider = ImageProvider(badgeDrawable),
+                        contentDescription = statusTitle,
+                        modifier = GlanceModifier.size(10.dp)
+                    )
+                    Spacer(GlanceModifier.width(6.dp))
+                    Text(
+                        text = statusTitle,
+                        style = TextStyle(
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = ColorProvider(statusColor)
                         )
-                        Text(
-                            text = if (serverUrl.length > 20) "Port 8123" else serverUrl.replace("ws://", ""),
-                            style = TextStyle(
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.Normal,
-                                color = ColorProvider(Color(0xFFCBD5E1))
-                            )
-                        )
-                    }
-
+                    )
                     Spacer(modifier = GlanceModifier.defaultWeight())
-
-                    // Center Badge Circle
-                    Row(
-                        modifier = GlanceModifier
-                            .background(ImageProvider(badgeDrawable))
-                            .padding(6.dp)
-                    ) {}
-
-                    Spacer(modifier = GlanceModifier.width(6.dp))
-
-                    // Right Column: Status & Subtitle
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(
-                            text = statusTitle,
-                            style = TextStyle(
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = ColorProvider(statusColor)
-                            )
+                    Text(
+                        text = "Barrantes Co.",
+                        style = TextStyle(
+                            fontSize = 9.sp,
+                            color = ColorProvider(Color(0xFF64748B))
                         )
-                        Text(
-                            text = statusSub,
-                            style = TextStyle(
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.Normal,
-                                color = ColorProvider(Color(0xFFCBD5E1))
-                            )
-                        )
-                    }
+                    )
                 }
             }
         }
     }
 }
-
-private data class Quadruple<A, B, C, D>(
-    val first: A,
-    val second: B,
-    val third: C,
-    val fourth: D
-)
 
 class ManualSyncAction : ActionCallback {
     override suspend fun onAction(
@@ -223,10 +188,8 @@ class ManualSyncAction : ActionCallback {
         parameters: ActionParameters
     ) {
         try {
-            val repository = SyncRepository(context)
-            repository.triggerManualSync()
+            SyncRepository(context).triggerManualSync()
         } catch (_: Exception) {
-            // Sync trigger handled
         }
     }
 }
