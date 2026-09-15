@@ -6,89 +6,91 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="container">
-    <!-- Header Card -->
-    <header class="header-card">
-      <div class="logo-title">
-        <div class="icon-box">
-          <svg width="32" height="32" viewBox="0 0 108 108" fill="none">
+  <div class="app">
+    <aside class="side">
+      <div class="brand">
+        <div class="mark">
+          <svg viewBox="0 0 512 512" width="36" height="36" aria-hidden="true">
             <defs>
-              <linearGradient id="metalBevelGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#FFFFFF"/>
-                <stop offset="30%" stop-color="#94A3B8"/>
-                <stop offset="60%" stop-color="#334155"/>
-                <stop offset="100%" stop-color="#CBD5E1"/>
-              </linearGradient>
-              <linearGradient id="cyanPurplePlasma" x1="0%" y1="0%" x2="100%" y2="100%">
+              <linearGradient id="plasma" x1="0%" y1="0%" x2="100%" y2="100%">
                 <stop offset="0%" stop-color="#00F0FF"/>
                 <stop offset="40%" stop-color="#00BFFF"/>
-                <stop offset="80%" stop-color="#38BDF8"/>
                 <stop offset="100%" stop-color="#8000FF"/>
               </linearGradient>
             </defs>
-            <!-- 3D Metallic Silver Frame -->
-            <path d="M 38,28 C 58,28 62,38 58,46 L 48,64 C 40,78 56,86 70,86 C 88,86 96,68 82,50 C 70,32 50,28 38,28 Z"
-                  stroke="url(#metalBevelGrad)" stroke-width="10" stroke-linecap="square" stroke-linejoin="miter"/>
-            <!-- Inner Plasma Electric Core -->
-            <path d="M 38,28 C 58,28 62,38 58,46 L 48,64 C 40,78 56,86 70,86 C 88,86 96,68 82,50 C 70,32 50,28 38,28 Z"
-                  stroke="url(#cyanPurplePlasma)" stroke-width="5" stroke-linecap="square" stroke-linejoin="miter"/>
-            <!-- Specular Highlight -->
-            <path d="M 38,28 L 54,28 M 48,64 L 70,86" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
+            <path d="M 190,140 C 260,140 280,180 260,220 L 220,300 C 190,360 260,400 320,400 C 400,400 440,320 380,240 C 320,160 220,140 190,140 Z"
+                  fill="none" stroke="#94A3B8" stroke-width="36" stroke-linecap="square"/>
+            <path d="M 190,140 C 260,140 280,180 260,220 L 220,300 C 190,360 260,400 320,400 C 400,400 440,320 380,240 C 320,160 220,140 190,140 Z"
+                  fill="none" stroke="url(#plasma)" stroke-width="22" stroke-linecap="square"/>
           </svg>
         </div>
         <div>
-          <h1>SYNC ENGINE</h1>
-          <span class="version">BY BARRANTES CO. • Control & Integración</span>
+          <div class="brand-name">SYNC ENGINE</div>
+          <div class="brand-sub">BY BARRANTES CO.</div>
         </div>
       </div>
+      <p class="tagline">Controlar. Conectar. Avanzar.</p>
       <div id="status-pill" class="status-pill disconnected">
         <span class="status-dot"></span>
         <span id="status-text">Desconectado</span>
       </div>
-    </header>
-
-    <!-- Main Grid -->
-    <div class="dashboard-grid">
-      <!-- Left Column: Connection Info & QR Code -->
-      <div class="card card-left">
-        <h2>📱 Vinculación & Estado</h2>
-        <div class="info-row">
-          <span class="label">Dispositivo:</span>
-          <span id="device-name" class="value">Buscando celular...</span>
-        </div>
-        <div class="info-row">
-          <span class="label">Servidor IP:</span>
-          <span id="server-url" class="value">Cargando...</span>
-        </div>
-
-        <div class="qr-container">
-          <p class="qr-label">Escanea con la cámara de Sync Engine:</p>
-          <canvas id="qr-canvas"></canvas>
-        </div>
+      <div class="side-stats">
+        <div><span>Dispositivo</span><strong id="device-name">Buscando celular…</strong></div>
+        <div><span>Servidor</span><strong id="server-url">Cargando…</strong></div>
       </div>
-
-      <!-- Right Column: Controls & Log -->
-      <div class="card card-right">
-        <h2>⚡ Control & Eventos</h2>
-
-        <div class="quick-actions">
-          <input type="text" id="clipboard-input" placeholder="Escribe texto o URL para enviar al celular..." />
-          <button id="send-clipboard-btn" class="btn primary-btn">📋 Enviar a Celular</button>
-        </div>
-
-        <div class="button-row">
-          <button id="lock-btn" class="btn secondary-btn">🔒 Bloquear PC</button>
-          <button id="clear-log-btn" class="btn outline-btn">🧹 Limpiar Log</button>
-        </div>
-
-        <div class="terminal-box">
-          <div class="terminal-header">REGISTRO DE EVENTOS EN TIEMPO REAL</div>
-          <div id="log-content" class="log-content"></div>
-        </div>
+      <div class="qr-box">
+        <p>Escanea con Sync Engine</p>
+        <canvas id="qr-canvas"></canvas>
       </div>
-    </div>
+    </aside>
+
+    <main class="main">
+      <section class="hero-widget" id="desktop-widget">
+        <div class="hero-mark">
+          <svg viewBox="0 0 512 512" width="72" height="72">
+            <defs>
+              <linearGradient id="plasma2" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#00F0FF"/>
+                <stop offset="100%" stop-color="#8000FF"/>
+              </linearGradient>
+            </defs>
+            <path d="M 190,140 C 260,140 280,180 260,220 L 220,300 C 190,360 260,400 320,400 C 400,400 440,320 380,240 C 320,160 220,140 190,140 Z"
+                  fill="none" stroke="url(#plasma2)" stroke-width="28" stroke-linecap="square"/>
+          </svg>
+        </div>
+        <div class="hero-clock">
+          <div id="clock">--:--</div>
+          <div id="clock-date">—</div>
+          <div class="hero-brand">SYNC ENGINE · BY BARRANTES CO.</div>
+        </div>
+        <div class="hero-device">
+          <div class="hero-device-name" id="hero-device">Xiaomi 2312</div>
+          <div class="hero-device-meta"><span class="live-dot"></span> 12 ms · 78%</div>
+        </div>
+      </section>
+
+      <section class="grid">
+        <div class="card">
+          <h2>Enviar al celular</h2>
+          <div class="quick-actions">
+            <input type="text" id="clipboard-input" placeholder="Texto o URL para el teléfono…" />
+            <button id="send-clipboard-btn" class="btn primary">Enviar</button>
+          </div>
+          <div class="button-row">
+            <button id="lock-btn" class="btn ghost">Bloquear PC</button>
+            <button id="clear-log-btn" class="btn ghost">Limpiar log</button>
+          </div>
+        </div>
+        <div class="card log-card">
+          <h2>Actividad en vivo</h2>
+          <div class="terminal-box">
+            <div class="terminal-header">REGISTRO</div>
+            <div id="log-content" class="log-content"></div>
+          </div>
+        </div>
+      </section>
+    </main>
   </div>
-
   <script src="renderer.js"></script>
 </body>
 </html>

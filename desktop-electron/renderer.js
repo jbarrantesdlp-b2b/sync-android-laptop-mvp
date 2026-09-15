@@ -11,39 +11,50 @@ const clipboardInput = document.getElementById('clipboard-input');
 const sendClipboardBtn = document.getElementById('send-clipboard-btn');
 const lockBtn = document.getElementById('lock-btn');
 const clearLogBtn = document.getElementById('clear-log-btn');
+const clockEl = document.getElementById('clock');
+const clockDate = document.getElementById('clock-date');
+const heroDevice = document.getElementById('hero-device');
 
-// Handle server info and generate QR code
+function tickClock() {
+  const now = new Date();
+  if (clockEl) {
+    clockEl.textContent = now.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: false });
+  }
+  if (clockDate) {
+    const raw = now.toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long' });
+    clockDate.textContent = raw.charAt(0).toUpperCase() + raw.slice(1);
+  }
+}
+tickClock();
+setInterval(tickClock, 10000);
+
 ipcRenderer.on('server-info', (event, data) => {
   serverUrl.textContent = data.url;
   QRCode.toCanvas(qrCanvas, data.url, {
-    width: 140,
+    width: 148,
     margin: 1,
-    color: {
-      dark: '#0F172A',
-      light: '#FFFFFF'
-    }
+    color: { dark: '#050811', light: '#FFFFFF' }
   }, (error) => {
     if (error) console.error('Error al generar QR en Canvas:', error);
   });
   appendLog('info', `Servidor activo en: ${data.url}`);
 });
 
-// Handle connection status update
 ipcRenderer.on('status-update', (event, data) => {
   if (data.status === 'CONNECTED') {
     statusPill.className = 'status-pill connected';
-    statusText.textContent = 'Activo (WebSocket)';
+    statusText.textContent = 'Conectado';
     deviceName.textContent = data.device || 'Xiaomi 2312';
+    if (heroDevice) heroDevice.textContent = data.device || 'Xiaomi 2312';
     appendLog('connect', `Dispositivo conectado: ${data.device || 'Android'}`);
   } else {
     statusPill.className = 'status-pill disconnected';
     statusText.textContent = 'Desconectado';
-    deviceName.textContent = 'Buscando celular...';
+    deviceName.textContent = 'Buscando celular\u2026';
     appendLog('disconnect', 'Dispositivo desconectado');
   }
 });
 
-// Handle incoming log messages
 ipcRenderer.on('log-message', (event, data) => {
   appendLog(data.type || 'info', data.message);
 });
@@ -57,7 +68,6 @@ function appendLog(type, text) {
   logContent.scrollTop = logContent.scrollHeight;
 }
 
-// Button actions
 sendClipboardBtn.addEventListener('click', () => {
   const text = clipboardInput.value.trim();
   if (text) {
