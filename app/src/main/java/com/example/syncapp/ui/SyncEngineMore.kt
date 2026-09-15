@@ -46,7 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.core.model.ThemePack
 import com.example.syncapp.SyncApp
-import com.example.syncapp.ui.brand.SyncEngineMark
+import com.example.syncapp.ui.brand.SyncEngineLockup
 import kotlinx.coroutines.launch
 
 @Composable
@@ -202,7 +202,7 @@ internal fun AiPane(
         Text("IA Assist", color = theme.textPrimary, fontSize = 24.sp, fontWeight = FontWeight.Bold)
         Text("Tu contexto, mas inteligente.", color = theme.textSecondary, fontSize = 13.sp)
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-            SyncEngineMark(size = 96.dp)
+            SyncEngineLockup(size = 180.dp)
         }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             ControlTile("Resumir", Icons.Outlined.AutoAwesome, theme) { onAsk("resumir") }

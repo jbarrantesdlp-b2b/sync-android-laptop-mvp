@@ -311,7 +311,15 @@ def generate(root: Path, source_mark: Path | None) -> None:
     mask_raw = load_rgba(mask_path) if mask_path.exists() else None
 
     silhouette = to_white_silhouette(mark)
-    lockup = make_lockup(mark, 1024)
+    lockup_path = src_dir / "lockup.png"
+    if lockup_path.exists():
+        official = load_rgba(lockup_path)
+        lockup = Image.new("RGBA", (1024, 1024), OLED)
+        fitted = official.copy()
+        fitted.thumbnail((1024, 1024), Image.Resampling.LANCZOS)
+        lockup.alpha_composite(fitted, ((1024 - fitted.width) // 2, (1024 - fitted.height) // 2))
+    else:
+        lockup = make_lockup(mark, 1024)
 
     print("\n[palette]")
     preview_cards: list[tuple[str, str]] = []
@@ -330,11 +338,6 @@ def generate(root: Path, source_mark: Path | None) -> None:
 
     maskable = fit_square(mark, 512, OLED, safe=0.22)
     maskable = apply_mask(maskable, circle_mask(512))
-    if mask_raw is not None:
-        # Prefer the official circular crop, scaled, if the master is already round-ish.
-        official = fit_square(trim(flood_knockout(mask_raw), 8), 512, OLED, safe=0.02)
-        official = apply_mask(official, circle_mask(512))
-        maskable = official
     write_png(maskable, out / "maskable-512.png")
     preview_cards.append(("maskable 512", "maskable-512.png"))
 

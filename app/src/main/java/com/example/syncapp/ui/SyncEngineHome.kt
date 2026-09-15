@@ -57,6 +57,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.core.model.ThemePack
+import com.example.syncapp.ui.brand.SyncEngineLockup
 import com.example.syncapp.ui.brand.SyncEngineMark
 import java.util.Calendar
 
@@ -219,7 +220,7 @@ internal fun DevicePane(
                 ),
                 contentAlignment = Alignment.Center
             ) {
-                SyncEngineMark(size = 88.dp)
+                SyncEngineLockup(size = 148.dp)
             }
         }
         Text("Acciones", color = theme.textSecondary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
