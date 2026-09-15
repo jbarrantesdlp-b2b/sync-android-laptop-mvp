@@ -171,11 +171,76 @@ fun SettingsScreen(viewModel: SyncViewModel? = null, initialTab: String? = null)
                     }
                     AppTab.Device -> {
                         Text("Control de dispositivo", color = theme.textPrimary, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-                        GlowCard(theme) { Box(Modifier.fillMaxWidth().height(140.dp), contentAlignment = Alignment.Center) { SyncEngineMark(size = 88.dp) } }
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Button(onClick = { repo.lockScreen(); toast("Lock") }, colors = ButtonDefaults.buttonColors(cyan, ink), shape = RoundedCornerShape(14.dp), modifier = Modifier.weight(1f)) { Text("Bloquear") }
-                            Button(onClick = { repo.presentationNext() }, colors = ButtonDefaults.buttonColors(theme.surfaceAlt, theme.textPrimary), shape = RoundedCornerShape(14.dp), modifier = Modifier.weight(1f)) { Text("Slide") }
+                        Text(
+                            if (connected) "Conectado \u00b7 ${Build.MODEL ?: \"este tel\u00e9fono\"}" else "Sin enlace con la laptop",
+                            color = if (connected) Color(0xFF10B981) else theme.danger,
+                            fontSize = 13.sp
+                        )
+                        GlowCard(theme) {
+                            Box(Modifier.fillMaxWidth().height(140.dp), contentAlignment = Alignment.Center) {
+                                SyncEngineMark(size = 88.dp)
+                            }
                         }
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Button(
+                                onClick = { toast(if (repo.lockScreen()) "Bloqueando\u2026" else "Sin conexi\u00f3n") },
+                                colors = ButtonDefaults.buttonColors(cyan, ink),
+                                shape = RoundedCornerShape(14.dp),
+                                modifier = Modifier.weight(1f).height(48.dp)
+                            ) { Text("Bloquear") }
+                            Button(
+                                onClick = { repo.adjustVolume("VOLUME_UP"); toast("Volumen +") },
+                                colors = ButtonDefaults.buttonColors(theme.surfaceAlt, theme.textPrimary),
+                                shape = RoundedCornerShape(14.dp),
+                                modifier = Modifier.weight(1f).height(48.dp)
+                            ) { Text("Volumen") }
+                        }
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Button(
+                                onClick = { repo.presentationPrev(); add("[CMD] Slide prev") },
+                                colors = ButtonDefaults.buttonColors(theme.surfaceAlt, theme.textPrimary),
+                                shape = RoundedCornerShape(14.dp),
+                                modifier = Modifier.weight(1f).height(48.dp)
+                            ) { Text("Prev") }
+                            Button(
+                                onClick = { repo.presentationNext(); add("[CMD] Slide next") },
+                                colors = ButtonDefaults.buttonColors(theme.surfaceAlt, theme.textPrimary),
+                                shape = RoundedCornerShape(14.dp),
+                                modifier = Modifier.weight(1f).height(48.dp)
+                            ) { Text("Next") }
+                        }
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Button(
+                                onClick = {
+                                    repo.rebootPc()
+                                    add("[CMD] REBOOT")
+                                    toast("Reinicio en 60s. Usa Abortar para cancelar.")
+                                },
+                                colors = ButtonDefaults.buttonColors(theme.surfaceAlt, theme.textPrimary),
+                                shape = RoundedCornerShape(14.dp),
+                                modifier = Modifier.weight(1f).height(48.dp)
+                            ) { Text("Reiniciar") }
+                            Button(
+                                onClick = {
+                                    repo.shutdownPc()
+                                    add("[CMD] SHUTDOWN")
+                                    toast("Apagado en 60s. Usa Abortar para cancelar.")
+                                },
+                                colors = ButtonDefaults.buttonColors(theme.danger, Color.White),
+                                shape = RoundedCornerShape(14.dp),
+                                modifier = Modifier.weight(1f).height(48.dp)
+                            ) { Text("Apagar") }
+                        }
+                        Button(
+                            onClick = {
+                                repo.abortShutdown()
+                                add("[CMD] ABORT_SHUTDOWN")
+                                toast("Apagado cancelado")
+                            },
+                            modifier = Modifier.fillMaxWidth().height(44.dp),
+                            colors = ButtonDefaults.buttonColors(theme.surfaceAlt, theme.textPrimary),
+                            shape = RoundedCornerShape(14.dp)
+                        ) { Text("Abortar apagado") }
                     }
                     AppTab.Activity -> {
                         Text("Actividad", color = theme.textPrimary, fontSize = 22.sp, fontWeight = FontWeight.Bold)
