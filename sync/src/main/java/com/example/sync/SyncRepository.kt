@@ -196,6 +196,18 @@ class SyncRepository(
         return sendMessage(action, "{}")
     }
 
+    fun shutdownPc(): Boolean {
+        return sendMessage("SHUTDOWN", "{}")
+    }
+
+    fun rebootPc(): Boolean {
+        return sendMessage("REBOOT", "{}")
+    }
+
+    fun abortShutdown(): Boolean {
+        return sendMessage("ABORT_SHUTDOWN", "{}")
+    }
+
     fun triggerManualSync() {
         startSync()
         sendMessage("sync_request", "{\"trigger\":\"manual\",\"timestamp\":${System.currentTimeMillis()}}")
