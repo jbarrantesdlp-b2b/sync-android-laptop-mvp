@@ -18,3 +18,5 @@ package-lock.json
 # Archivos temporales de sistema y terminal
 set
 *.log
+# icon factory scratch
+brand/out/_board/

@@ -43,6 +43,7 @@ function createWindow() {
     autoHideMenuBar: true,
     title: 'SYNC ENGINE \u2014 By Barrantes Co.',
     backgroundColor: '#050811',
+    icon: path.join(__dirname, 'icon.png'),
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
@@ -76,9 +77,8 @@ function createWindow() {
 
 function createTray() {
   try {
-    const icon = nativeImage.createFromBitmap(Buffer.from([
-      0, 255, 200, 255, 0, 255, 200, 255, 0, 255, 200, 255, 0, 255, 200, 255
-    ]), { width: 2, height: 2 });
+    const iconPath = path.join(__dirname, 'icon.png');
+    const icon = nativeImage.createFromPath(iconPath).resize({ width: 24, height: 24 });
 
     tray = new Tray(icon);
     tray.setToolTip('Sync Engine \u2014 By Barrantes Co.');

@@ -10,8 +10,9 @@
   },
   "build": {
     "appId": "com.example.syncappdesktop",
-    "productName": "SyncApp Desktop",
+    "productName": "SYNC ENGINE",
     "win": {
+      "icon": "icon.ico",
       "target": ["portable"]
     },
     "directories": {
