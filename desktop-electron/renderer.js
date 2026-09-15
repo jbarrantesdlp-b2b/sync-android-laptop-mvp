@@ -52,6 +52,48 @@ ipcRenderer.on('log-message', (event, data) => {
   appendLog(data.type || 'info', data.message);
 });
 
+ipcRenderer.on('iot-telemetry', (event, payload) => {
+  updateIot(payload || {});
+});
+
+function fmt(v, unit) {
+  if (v === null || v === undefined || v === '') return '--';
+  const n = Number(v);
+  if (Number.isNaN(n)) return String(v);
+  return `${n.toFixed(1)}${unit}`;
+}
+
+function setText(id, text) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = text;
+}
+
+function updateIot(payload) {
+  const s = payload.sensors || payload;
+  const source = payload.source || 'nodo';
+  const device = payload.device || '';
+  setText('iot-source', `${source}${device ? ' \u00b7 ' + device : ''} \u00b7 en vivo`);
+  setText('iot-light', fmt(s.lightLux, ' lx'));
+  setText('iot-accel', fmt(s.accelG, ' g'));
+  setText('iot-prox', fmt(s.proximityCm, ' cm'));
+  if (s.batteryPct === null || s.batteryPct === undefined) {
+    setText('iot-batt', '--');
+  } else {
+    setText('iot-batt', `${Math.round(Number(s.batteryPct))}%${s.charging ? ' +' : ''}`);
+  }
+  setText('iot-steps', s.steps === null || s.steps === undefined ? '--' : String(s.steps));
+  setText('iot-temp', fmt(s.tempC, ' \u00b0C'));
+  setText('iot-hum', fmt(s.humidity, ' %'));
+  setText('iot-press', fmt(s.pressureHpa, ' hPa'));
+  if (s.lat != null && s.lng != null) {
+    setText('iot-gps', `${Number(s.lat).toFixed(4)}, ${Number(s.lng).toFixed(4)}`);
+  } else {
+    setText('iot-gps', '--');
+  }
+  const strip = document.getElementById('iot-strip');
+  if (strip) strip.classList.add('live');
+}
+
 function appendLog(type, text) {
   const time = new Date().toLocaleTimeString('es-ES', { hour12: false });
   const div = document.createElement('div');
