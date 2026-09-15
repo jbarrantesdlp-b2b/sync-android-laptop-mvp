@@ -57,5 +57,19 @@ enum class ThemePack(
         success = Color(0xFF16A34A),
         warning = Color(0xFFD97706),
         danger = Color(0xFFDC2626)
+    ),
+    Neón(
+        displayName = "Cyberpunk OLED",
+        background = Color(0xFF000000),
+        surface = Color(0xFF121218),
+        surfaceAlt = Color(0xFF1A1A22),
+        primary = Color(0xFF00BFFF),
+        secondary = Color(0xFF8000FF),
+        textPrimary = Color(0xFFFFFFFF),
+        textSecondary = Color(0xFF64748B),
+        border = Color(0xFF27272A),
+        success = Color(0xFF10B981),
+        warning = Color(0xFFF59E0B),
+        danger = Color(0xFFEF4444)
     )
 }
