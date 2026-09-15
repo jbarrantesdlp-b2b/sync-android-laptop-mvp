@@ -1,4 +1,4 @@
-﻿const { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, shell } = require('electron');
+const { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, shell } = require('electron');
 const path = require('path');
 const http = require('http');
 const WebSocket = require('ws');
@@ -36,12 +36,12 @@ function getPrimaryLocalIp() {
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 760,
-    height: 540,
+    width: 1100,
+    height: 720,
     resizable: true,
     autoHideMenuBar: true,
-    title: 'SyncApp - Integración Local',
-    backgroundColor: '#0B0F19',
+    title: 'SYNC ENGINE \u2014 By Barrantes Co.',
+    backgroundColor: '#050811',
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
@@ -57,8 +57,8 @@ function createWindow() {
       if (tray) {
         try {
           tray.displayBalloon({
-            title: 'SyncApp',
-            content: 'La app sigue ejecutándose en segundo plano en la bandeja.'
+            title: 'Sync Engine',
+            content: 'Sigue en segundo plano en la bandeja. Controlar. Conectar. Avanzar.'
           });
         } catch (_e) {}
       }
@@ -80,11 +80,11 @@ function createTray() {
     ]), { width: 2, height: 2 });
 
     tray = new Tray(icon);
-    tray.setToolTip('SyncApp - Control de Celular & Laptop');
+    tray.setToolTip('Sync Engine \u2014 By Barrantes Co.');
 
     const contextMenu = Menu.buildFromTemplate([
       {
-        label: 'Abrir SyncApp',
+        label: 'Abrir Sync Engine',
         click: () => {
           if (mainWindow) {
             mainWindow.show();
@@ -115,7 +115,7 @@ function createTray() {
 }
 
 function executeCommand(type, payload) {
-  console.log(`[SyncApp Command Executed]: ${type}`, payload);
+  console.log(`[Sync Engine Command]: ${type}`, payload);
   switch (type) {
     case 'LOCK_SCREEN':
       exec('powershell -c "rundll32.exe user32.dll,LockWorkStation"');
@@ -149,6 +149,18 @@ function executeCommand(type, payload) {
 
     case 'PRESENTATION_PREV':
       exec('powershell -c "$w = New-Object -ComObject wscript.shell; $w.SendKeys(\'{LEFT}\')"');
+      break;
+
+    case 'SHUTDOWN':
+      exec('shutdown /s /t 60');
+      break;
+
+    case 'REBOOT':
+      exec('shutdown /r /t 60');
+      break;
+
+    case 'ABORT_SHUTDOWN':
+      exec('shutdown /a');
       break;
 
     case 'SYNC_CLIPBOARD':
@@ -205,7 +217,6 @@ function startServer() {
   const primaryIp = getPrimaryLocalIp();
   const wsUrl = `ws://${primaryIp}:${PORT}`;
 
-  // HTTP Server for REST Fallback
   server = http.createServer((req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -251,12 +262,11 @@ function startServer() {
     res.end(JSON.stringify({ error: 'Not found' }));
   });
 
-  // Attach WebSocket Server to HTTP Server
   wss = new WebSocket.Server({ server });
 
   server.listen(PORT, '0.0.0.0', () => {
     console.log('====================================================');
-    console.log(`[SyncApp Server] Dual Protocol activo en: ${wsUrl}`);
+    console.log(`[Sync Engine] Dual Protocol activo en: ${wsUrl}`);
     console.log('====================================================');
     try {
       qrcode.generate(wsUrl, { small: true });
@@ -268,7 +278,7 @@ function startServer() {
   wss.on('connection', (ws, req) => {
     activeWs = ws;
     const ip = req.socket.remoteAddress;
-    console.log(`[SyncApp WebSocket] Conexión establecida desde: ${ip}`);
+    console.log(`[Sync Engine WebSocket] Conexi\u00f3n desde: ${ip}`);
 
     notifyClientConnected(ip);
     if (mainWindow) {
@@ -308,14 +318,14 @@ function startServer() {
         executeCommand(msg.type, msg.payload);
         sendAck(ws, msg.id, msg.type, 'SUCCESS');
       } catch (err) {
-        console.error('[SyncApp Error]: Mensaje corrupto recibido', err);
+        console.error('[Sync Engine Error]: Mensaje corrupto recibido', err);
       }
     });
 
     ws.on('close', () => {
       if (activeWs === ws) {
         activeWs = null;
-        console.log('[SyncApp] Dispositivo desconectado.');
+        console.log('[Sync Engine] Dispositivo desconectado.');
         if (mainWindow) {
           mainWindow.webContents.send('status-update', { status: 'DISCONNECTED' });
           mainWindow.webContents.send('log-message', { type: 'disconnect', message: 'Celular desconectado' });
@@ -338,7 +348,6 @@ function sendAck(ws, originalId, action, result) {
   }
 }
 
-// IPC Handlers from Renderer
 ipcMain.on('send-clipboard-to-phone', (event, text) => {
   if (activeWs && activeWs.readyState === WebSocket.OPEN) {
     activeWs.send(JSON.stringify({
