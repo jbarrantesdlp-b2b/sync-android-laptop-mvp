@@ -1,6 +1,7 @@
 package com.example.syncwidget
 
 import android.content.Context
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -46,15 +47,31 @@ object ActionsGlanceWidget : GlanceAppWidget() {
                     .padding(10.dp)
             ) {
                 Row(modifier = GlanceModifier.fillMaxWidth().defaultWeight()) {
-                    ActionTile("\u21bb", "Sync", GlanceModifier.defaultWeight().clickable(actionRunCallback<ManualSyncAction>()))
+                    ActionTile(
+                        "\u21bb",
+                        "Sync",
+                        GlanceModifier.defaultWeight().clickable(actionRunCallback<ManualSyncAction>())
+                    )
                     Spacer(GlanceModifier.width(8.dp))
-                    ActionTile("\u2191", "Enviar", GlanceModifier.defaultWeight().clickable(actionStartActivity(openAppIntent("clipboard"))))
+                    ActionTile(
+                        "\u2191",
+                        "Enviar",
+                        GlanceModifier.defaultWeight().clickable(actionStartActivity(openAppIntent("clipboard")))
+                    )
                 }
                 Spacer(GlanceModifier.height(8.dp))
                 Row(modifier = GlanceModifier.fillMaxWidth().defaultWeight()) {
-                    ActionTile("\ud83d\udd12", "Bloquear", GlanceModifier.defaultWeight().clickable(actionRunCallback<LockPcAction>()))
+                    ActionTile(
+                        "\uD83D\uDD12",
+                        "Bloquear",
+                        GlanceModifier.defaultWeight().clickable(actionRunCallback<LockPcAction>())
+                    )
                     Spacer(GlanceModifier.width(8.dp))
-                    ActionTile("\u2726", "IA", GlanceModifier.defaultWeight().clickable(actionStartActivity(openAppIntent("ai"))))
+                    ActionTile(
+                        "\u2726",
+                        "IA",
+                        GlanceModifier.defaultWeight().clickable(actionStartActivity(openAppIntent("ai")))
+                    )
                 }
             }
         }
@@ -62,6 +79,7 @@ object ActionsGlanceWidget : GlanceAppWidget() {
 }
 
 @Suppress("RestrictedApi")
+@Composable
 private fun ActionTile(symbol: String, label: String, modifier: GlanceModifier) {
     Column(
         modifier = modifier
