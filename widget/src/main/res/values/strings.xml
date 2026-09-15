@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="widget_description">Reloj Digital con Fecha y Estado de Sincronización (2x2)</string>
+    <string name="widget_description">Reloj, estado de Sync Engine y acceso rápido</string>
+    <string name="widget_actions_description">Acciones rápidas: Sync, Enviar, Bloquear, IA</string>
 </resources>
