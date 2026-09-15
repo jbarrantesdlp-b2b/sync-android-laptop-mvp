@@ -1,5 +1,6 @@
 package com.example.syncapp.iot
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -65,6 +66,7 @@ class IotSensorHub(private val context: Context) : SensorEventListener {
         if (running) return
         running = true
         present.clear()
+        requestRuntimePermissions()
         register(Sensor.TYPE_LIGHT, "luz")
         register(Sensor.TYPE_ACCELEROMETER, "movimiento")
         register(Sensor.TYPE_PROXIMITY, "proximidad")
@@ -81,6 +83,20 @@ class IotSensorHub(private val context: Context) : SensorEventListener {
     fun stop() {
         running = false
         try { sensorManager.unregisterListener(this) } catch (_: Exception) {}
+    }
+
+    private fun requestRuntimePermissions() {
+        val activity = context as? Activity ?: return
+        val needed = mutableListOf<String>()
+        if (Build.VERSION.SDK_INT >= 29) {
+            needed.add(android.Manifest.permission.ACTIVITY_RECOGNITION)
+        }
+        needed.add(android.Manifest.permission.ACCESS_FINE_LOCATION)
+        needed.add(android.Manifest.permission.ACCESS_COARSE_LOCATION)
+        try {
+            activity.requestPermissions(needed.toTypedArray(), 8123)
+        } catch (_: Exception) {
+        }
     }
 
     private fun register(type: Int, label: String) {
