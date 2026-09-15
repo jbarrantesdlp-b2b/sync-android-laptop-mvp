@@ -7,11 +7,12 @@ const os = require('os');
 const qrcode = require('qrcode-terminal');
 
 const PORT = 8123;
+const LIVE_TYPES = new Set(['IOT_TELEMETRY', 'HARDWARE_TELEMETRY', 'PING', 'PONG', 'CONNECTION_STATE', 'COMMAND_ACK']);
 let mainWindow = null;
 let tray = null;
 let server = null;
 let wss = null;
-let activeWs = null;
+const clients = new Set();
 let telemetryInterval = null;
 
 function getAllLocalIps() {
@@ -37,7 +38,7 @@ function getPrimaryLocalIp() {
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1100,
-    height: 720,
+    height: 820,
     resizable: true,
     autoHideMenuBar: true,
     title: 'SYNC ENGINE \u2014 By Barrantes Co.',
@@ -176,41 +177,97 @@ function executeCommand(type, payload) {
   }
 }
 
+function connectedCount() {
+  let n = 0;
+  for (const ws of clients) {
+    if (ws.readyState === WebSocket.OPEN) n++;
+  }
+  return n;
+}
+
+function broadcast(obj, except = null) {
+  const raw = typeof obj === 'string' ? obj : JSON.stringify(obj);
+  for (const ws of clients) {
+    if (ws !== except && ws.readyState === WebSocket.OPEN) {
+      try { ws.send(raw); } catch (_e) {}
+    }
+  }
+}
+
 function startTelemetryBroadcaster() {
   if (telemetryInterval) clearInterval(telemetryInterval);
   telemetryInterval = setInterval(() => {
-    if (activeWs && activeWs.readyState === WebSocket.OPEN) {
-      const freeMemGb = (os.freemem() / (1024 * 1024 * 1024)).toFixed(1);
-      const totalMemGb = (os.totalmem() / (1024 * 1024 * 1024)).toFixed(1);
-      const ramUsagePercent = Math.round(((os.totalmem() - os.freemem()) / os.totalmem()) * 100);
-      const uptimeMin = Math.round(os.uptime() / 60);
+    if (connectedCount() === 0) return;
+    const freeMemGb = (os.freemem() / (1024 * 1024 * 1024)).toFixed(1);
+    const totalMemGb = (os.totalmem() / (1024 * 1024 * 1024)).toFixed(1);
+    const ramUsagePercent = Math.round(((os.totalmem() - os.freemem()) / os.totalmem()) * 100);
+    const uptimeMin = Math.round(os.uptime() / 60);
 
-      const payload = {
-        freeRamGb: freeMemGb,
-        totalRamGb: totalMemGb,
-        ramPercent: ramUsagePercent,
-        uptimeMin: uptimeMin,
-        cpuCount: os.cpus().length,
-        platform: os.platform()
-      };
+    const payload = {
+      freeRamGb: freeMemGb,
+      totalRamGb: totalMemGb,
+      ramPercent: ramUsagePercent,
+      uptimeMin: uptimeMin,
+      cpuCount: os.cpus().length,
+      platform: os.platform()
+    };
 
-      activeWs.send(JSON.stringify({
-        id: `telemetry-${Date.now()}`,
-        type: 'HARDWARE_TELEMETRY',
-        payload: payload,
-        timestamp: Date.now(),
-        direction: 'INBOUND',
-        status: 'RECEIVED'
-      }));
-    }
+    broadcast({
+      id: `telemetry-${Date.now()}`,
+      type: 'HARDWARE_TELEMETRY',
+      payload,
+      timestamp: Date.now(),
+      direction: 'INBOUND',
+      status: 'RECEIVED'
+    });
   }, 3000);
 }
 
 function notifyClientConnected(ipAddress) {
   if (mainWindow) {
     const cleanIp = (ipAddress || '').replace('::ffff:', '');
-    mainWindow.webContents.send('status-update', { status: 'CONNECTED', device: `Celular (${cleanIp})` });
+    const n = connectedCount();
+    const label = n > 1 ? `${n} nodos (${cleanIp})` : `Celular (${cleanIp})`;
+    mainWindow.webContents.send('status-update', { status: 'CONNECTED', device: label, clients: n });
   }
+}
+
+const lastIotLog = new Map();
+
+function emitIot(payload, fromIp) {
+  if (!mainWindow) return;
+  mainWindow.webContents.send('iot-telemetry', payload);
+  const source = (payload && (payload.source || payload.device)) || 'nodo';
+  const key = String(source);
+  const now = Date.now();
+  if (!lastIotLog.has(key) || now - lastIotLog.get(key) > 15000) {
+    lastIotLog.set(key, now);
+    const ip = (fromIp || '').replace('::ffff:', '');
+    mainWindow.webContents.send('log-message', {
+      type: 'iot',
+      message: `IoT [${source}] ${payload && payload.device ? payload.device : ''} ${ip}`.trim()
+    });
+  }
+}
+
+function handleIotMessage(msg, remoteAddress, exceptWs) {
+  let payload = msg.payload;
+  if (typeof payload === 'string') {
+    try { payload = JSON.parse(payload); } catch (_e) { payload = { raw: payload }; }
+  }
+  if (!payload || typeof payload !== 'object') {
+    payload = msg.sensors ? msg : {};
+  }
+  emitIot(payload, remoteAddress);
+  broadcast({
+    id: msg.id || `iot-${Date.now()}`,
+    type: 'IOT_TELEMETRY',
+    payload,
+    timestamp: Date.now(),
+    direction: 'INBOUND',
+    status: 'RECEIVED'
+  }, exceptWs);
+  return payload;
 }
 
 function startServer() {
@@ -231,7 +288,24 @@ function startServer() {
     if (req.url === '/ping' || req.url === '/status') {
       notifyClientConnected(req.socket.remoteAddress);
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ status: 'CONNECTED', hostName: os.hostname(), ip: primaryIp }));
+      res.end(JSON.stringify({ status: 'CONNECTED', hostName: os.hostname(), ip: primaryIp, clients: connectedCount() }));
+      return;
+    }
+
+    if (req.method === 'POST' && (req.url === '/api/iot' || req.url === '/iot')) {
+      let body = '';
+      req.on('data', chunk => { body += chunk.toString(); });
+      req.on('end', () => {
+        try {
+          const msg = JSON.parse(body);
+          handleIotMessage(msg, req.socket.remoteAddress, null);
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ result: 'SUCCESS', action: 'IOT_TELEMETRY' }));
+        } catch (e) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: e.message }));
+        }
+      });
       return;
     }
 
@@ -242,9 +316,13 @@ function startServer() {
         try {
           const msg = JSON.parse(body);
           notifyClientConnected(req.socket.remoteAddress);
-          executeCommand(msg.type, msg.payload);
+          if (msg.type === 'IOT_TELEMETRY' || (msg.payload && msg.payload.sensors)) {
+            handleIotMessage(msg, req.socket.remoteAddress, null);
+          } else if (!LIVE_TYPES.has(msg.type)) {
+            executeCommand(msg.type, msg.payload);
+          }
 
-          if (mainWindow) {
+          if (mainWindow && msg.type !== 'IOT_TELEMETRY') {
             mainWindow.webContents.send('log-message', { type: 'data', message: `Comando REST [${msg.type}]: ${JSON.stringify(msg.payload)}` });
           }
 
@@ -267,6 +345,7 @@ function startServer() {
   server.listen(PORT, '0.0.0.0', () => {
     console.log('====================================================');
     console.log(`[Sync Engine] Dual Protocol activo en: ${wsUrl}`);
+    console.log(`[Sync Engine] IoT REST: http://${primaryIp}:${PORT}/api/iot`);
     console.log('====================================================');
     try {
       qrcode.generate(wsUrl, { small: true });
@@ -276,9 +355,9 @@ function startServer() {
   startTelemetryBroadcaster();
 
   wss.on('connection', (ws, req) => {
-    activeWs = ws;
+    clients.add(ws);
     const ip = req.socket.remoteAddress;
-    console.log(`[Sync Engine WebSocket] Conexi\u00f3n desde: ${ip}`);
+    console.log(`[Sync Engine WebSocket] Conexi\u00f3n desde: ${ip} (${connectedCount()} clientes)`);
 
     notifyClientConnected(ip);
     if (mainWindow) {
@@ -299,10 +378,6 @@ function startServer() {
         const msg = JSON.parse(data.toString());
         notifyClientConnected(ip);
 
-        if (mainWindow && msg.type !== 'PING') {
-          mainWindow.webContents.send('log-message', { type: 'data', message: `Mensaje WebSocket [${msg.type}]: ${JSON.stringify(msg.payload)}` });
-        }
-
         if (msg.type === 'PING' || msg.payload === 'PING') {
           ws.send(JSON.stringify({
             id: msg.id || 'ack-ping',
@@ -315,6 +390,19 @@ function startServer() {
           return;
         }
 
+        if (msg.type === 'IOT_TELEMETRY') {
+          handleIotMessage(msg, ip, ws);
+          return;
+        }
+
+        if (LIVE_TYPES.has(msg.type)) {
+          return;
+        }
+
+        if (mainWindow) {
+          mainWindow.webContents.send('log-message', { type: 'data', message: `Mensaje WebSocket [${msg.type}]: ${JSON.stringify(msg.payload)}` });
+        }
+
         executeCommand(msg.type, msg.payload);
         sendAck(ws, msg.id, msg.type, 'SUCCESS');
       } catch (err) {
@@ -323,12 +411,15 @@ function startServer() {
     });
 
     ws.on('close', () => {
-      if (activeWs === ws) {
-        activeWs = null;
-        console.log('[Sync Engine] Dispositivo desconectado.');
-        if (mainWindow) {
+      clients.delete(ws);
+      console.log(`[Sync Engine] Dispositivo desconectado. Quedan ${connectedCount()}.`);
+      if (mainWindow) {
+        if (connectedCount() === 0) {
           mainWindow.webContents.send('status-update', { status: 'DISCONNECTED' });
           mainWindow.webContents.send('log-message', { type: 'disconnect', message: 'Celular desconectado' });
+        } else {
+          notifyClientConnected(ip);
+          mainWindow.webContents.send('log-message', { type: 'disconnect', message: `Nodo sali\u00f3. Quedan ${connectedCount()}.` });
         }
       }
     });
@@ -349,16 +440,14 @@ function sendAck(ws, originalId, action, result) {
 }
 
 ipcMain.on('send-clipboard-to-phone', (event, text) => {
-  if (activeWs && activeWs.readyState === WebSocket.OPEN) {
-    activeWs.send(JSON.stringify({
-      id: `pc-${Date.now()}`,
-      type: 'CLIPBOARD_RECEIVED_FROM_PC',
-      payload: { text },
-      timestamp: Date.now(),
-      direction: 'INBOUND',
-      status: 'RECEIVED'
-    }));
-  }
+  broadcast({
+    id: `pc-${Date.now()}`,
+    type: 'CLIPBOARD_RECEIVED_FROM_PC',
+    payload: { text },
+    timestamp: Date.now(),
+    direction: 'INBOUND',
+    status: 'RECEIVED'
+  });
 });
 
 ipcMain.on('lock-pc', () => {
