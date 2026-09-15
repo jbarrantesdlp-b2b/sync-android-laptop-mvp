@@ -1,4 +1,4 @@
-﻿<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.syncwidget">
 
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
@@ -9,13 +9,37 @@
         <receiver
             android:name=".SyncWidgetReceiver"
             android:exported="true"
-            android:label="Reloj Sync (2x2)">
+            android:label="Sync Engine — Reloj y estado">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/sync_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".ActionsWidgetReceiver"
+            android:exported="true"
+            android:label="Sync Engine — Acciones">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/actions_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".CompactWidgetReceiver"
+            android:exported="true"
+            android:label="Sync Engine — Compacto">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/compact_widget_info" />
         </receiver>
     </application>
 
