@@ -34,6 +34,7 @@ class SyncRepository(
 
     companion object {
         const val DEFAULT_URL = "ws://10.0.2.2:8123"
+        private val LIVE_TYPES = setOf("IOT_TELEMETRY", "HARDWARE_TELEMETRY", "PING", "PONG")
     }
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -162,6 +163,18 @@ class SyncRepository(
         return sent || socketClient.isOnline()
     }
 
+    /**
+     * WebSocket-only fire-and-forget. Do not use for commands — it never
+     * enqueues Room. Used by the IoT hub so 2.5s telemetry does not flood the DB.
+     */
+    fun sendLive(type: String, payload: String): Boolean {
+        val id = UUID.randomUUID().toString()
+        val formattedJson = "{\"id\":\"$id\",\"type\":\"$type\",\"payload\":$payload}"
+        return socketClient.send(formattedJson)
+    }
+
+    fun sendIotTelemetry(payloadJson: String): Boolean = sendLive("IOT_TELEMETRY", payloadJson)
+
     fun sendData(data: String): Boolean {
         return sendMessage("data", if (data.startsWith("{")) data else "\"$data\"")
     }
@@ -196,6 +209,18 @@ class SyncRepository(
         return sendMessage(action, "{}")
     }
 
+    fun shutdownPc(): Boolean {
+        return sendMessage("SHUTDOWN", "{}")
+    }
+
+    fun rebootPc(): Boolean {
+        return sendMessage("REBOOT", "{}")
+    }
+
+    fun abortShutdown(): Boolean {
+        return sendMessage("ABORT_SHUTDOWN", "{}")
+    }
+
     fun triggerManualSync() {
         startSync()
         sendMessage("sync_request", "{\"trigger\":\"manual\",\"timestamp\":${System.currentTimeMillis()}}")
@@ -207,6 +232,9 @@ class SyncRepository(
             if (roundtrip in 1..30000) {
                 _latencyMs.value = roundtrip
             }
+        }
+        if (LIVE_TYPES.any { data.contains("\"$it\"") }) {
+            return
         }
         scope.launch {
             val message = SyncMessage(

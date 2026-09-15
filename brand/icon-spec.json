@@ -1,0 +1,16 @@
+{
+  "safe_zone": 0.2,
+  "colors": {
+    "oled": "#050811",
+    "cyan": "#00BFFF",
+    "white": "#FFFFFF"
+  },
+  "palette_sizes": [
+    48,
+    96,
+    192,
+    512,
+    1024
+  ],
+  "source": "brand/source/mark.png"
+}

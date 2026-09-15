@@ -6,39 +6,15 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="container">
-    <!-- Header Card -->
-    <header class="header-card">
-      <div class="logo-title">
-        <div class="icon-box">
-          <svg width="32" height="32" viewBox="0 0 108 108" fill="none">
-            <defs>
-              <linearGradient id="metalBevelGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#FFFFFF"/>
-                <stop offset="30%" stop-color="#94A3B8"/>
-                <stop offset="60%" stop-color="#334155"/>
-                <stop offset="100%" stop-color="#CBD5E1"/>
-              </linearGradient>
-              <linearGradient id="cyanPurplePlasma" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#00F0FF"/>
-                <stop offset="40%" stop-color="#00BFFF"/>
-                <stop offset="80%" stop-color="#38BDF8"/>
-                <stop offset="100%" stop-color="#8000FF"/>
-              </linearGradient>
-            </defs>
-            <!-- 3D Metallic Silver Frame -->
-            <path d="M 38,28 C 58,28 62,38 58,46 L 48,64 C 40,78 56,86 70,86 C 88,86 96,68 82,50 C 70,32 50,28 38,28 Z"
-                  stroke="url(#metalBevelGrad)" stroke-width="10" stroke-linecap="square" stroke-linejoin="miter"/>
-            <!-- Inner Plasma Electric Core -->
-            <path d="M 38,28 C 58,28 62,38 58,46 L 48,64 C 40,78 56,86 70,86 C 88,86 96,68 82,50 C 70,32 50,28 38,28 Z"
-                  stroke="url(#cyanPurplePlasma)" stroke-width="5" stroke-linecap="square" stroke-linejoin="miter"/>
-            <!-- Specular Highlight -->
-            <path d="M 38,28 L 54,28 M 48,64 L 70,86" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
-          </svg>
+  <div class="shell">
+    <header class="top">
+      <div class="brand">
+        <div class="mark">
+          <img src="assets/mark.png" width="36" height="36" alt="Sync Engine"/>
         </div>
         <div>
           <h1>SYNC ENGINE</h1>
-          <span class="version">BY BARRANTES CO. • Control & Integración</span>
+          <p>BY BARRANTES CO. · Controlar. Conectar. Avanzar.</p>
         </div>
       </div>
       <div id="status-pill" class="status-pill disconnected">
@@ -47,48 +23,65 @@
       </div>
     </header>
 
-    <!-- Main Grid -->
-    <div class="dashboard-grid">
-      <!-- Left Column: Connection Info & QR Code -->
-      <div class="card card-left">
-        <h2>📱 Vinculación & Estado</h2>
-        <div class="info-row">
-          <span class="label">Dispositivo:</span>
-          <span id="device-name" class="value">Buscando celular...</span>
+    <section class="hero-widget">
+      <div class="clock-col">
+        <div class="mark big">
+          <img src="assets/mark.png" width="72" height="72" alt="Sync Engine"/>
         </div>
-        <div class="info-row">
-          <span class="label">Servidor IP:</span>
-          <span id="server-url" class="value">Cargando...</span>
+        <div>
+          <div id="live-date" class="date">Martes, 15 de septiembre</div>
+          <div id="live-clock" class="clock">9:41</div>
         </div>
+      </div>
+      <div class="device-col">
+        <div class="device-name" id="device-name">Buscando celular…</div>
+        <div class="device-meta"><span id="server-url">Cargando…</span></div>
+      </div>
+      <div class="hero-actions">
+        <button id="lock-btn" class="icon-btn" title="Bloquear PC">🔒</button>
+        <button id="send-clipboard-btn" class="icon-btn" title="Enviar al celular">⎘</button>
+        <button id="clear-log-btn" class="icon-btn" title="Limpiar log">↻</button>
+      </div>
+    </section>
 
+    <section class="iot-strip" id="iot-strip">
+      <div class="iot-head">
+        <h2>Sensores IoT</h2>
+        <span id="iot-source">Esperando telemetría del teléfono o ESP32…</span>
+      </div>
+      <div class="iot-tiles">
+        <div class="iot-tile"><div class="iot-value" id="iot-light">--</div><div class="iot-label">Luz</div></div>
+        <div class="iot-tile"><div class="iot-value" id="iot-accel">--</div><div class="iot-label">Movimiento</div></div>
+        <div class="iot-tile"><div class="iot-value" id="iot-prox">--</div><div class="iot-label">Proximidad</div></div>
+        <div class="iot-tile"><div class="iot-value" id="iot-batt">--</div><div class="iot-label">Batería</div></div>
+        <div class="iot-tile"><div class="iot-value" id="iot-steps">--</div><div class="iot-label">Pasos</div></div>
+        <div class="iot-tile"><div class="iot-value" id="iot-temp">--</div><div class="iot-label">Temp</div></div>
+        <div class="iot-tile"><div class="iot-value" id="iot-hum">--</div><div class="iot-label">Humedad</div></div>
+        <div class="iot-tile"><div class="iot-value" id="iot-press">--</div><div class="iot-label">Presión</div></div>
+        <div class="iot-tile wide"><div class="iot-value" id="iot-gps">--</div><div class="iot-label">GPS</div></div>
+      </div>
+    </section>
+
+    <div class="grid">
+      <div class="card">
+        <h2>Vinculación</h2>
+        <p class="hint">Escanea este QR con Sync Engine en el teléfono.</p>
         <div class="qr-container">
-          <p class="qr-label">Escanea con la cámara de Sync Engine:</p>
           <canvas id="qr-canvas"></canvas>
         </div>
       </div>
-
-      <!-- Right Column: Controls & Log -->
-      <div class="card card-right">
-        <h2>⚡ Control & Eventos</h2>
-
+      <div class="card">
+        <h2>Portapapeles hacia el celular</h2>
         <div class="quick-actions">
-          <input type="text" id="clipboard-input" placeholder="Escribe texto o URL para enviar al celular..." />
-          <button id="send-clipboard-btn" class="btn primary-btn">📋 Enviar a Celular</button>
+          <input type="text" id="clipboard-input" placeholder="Texto o URL para enviar…" />
         </div>
-
-        <div class="button-row">
-          <button id="lock-btn" class="btn secondary-btn">🔒 Bloquear PC</button>
-          <button id="clear-log-btn" class="btn outline-btn">🧹 Limpiar Log</button>
-        </div>
-
         <div class="terminal-box">
-          <div class="terminal-header">REGISTRO DE EVENTOS EN TIEMPO REAL</div>
+          <div class="terminal-header">Registro en vivo</div>
           <div id="log-content" class="log-content"></div>
         </div>
       </div>
     </div>
   </div>
-
   <script src="renderer.js"></script>
 </body>
 </html>
