@@ -1,13 +1,14 @@
-﻿package com.example.syncwidget
+package com.example.syncwidget
 
 import android.content.Context
 import androidx.glance.appwidget.updateAll
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
+import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
-import androidx.work.WorkerParameters
 import androidx.work.WorkManager
+import androidx.work.WorkerParameters
 import com.example.core.datastore.PreferencesManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -29,10 +30,9 @@ class WidgetUpdateObserver(private val context: Context) {
             ) { status, theme ->
                 Pair(status, theme)
             }.collect {
-                updateWidget()
+                refreshAll()
             }
         }
-
         schedulePeriodicWidgetUpdates()
     }
 
@@ -40,10 +40,12 @@ class WidgetUpdateObserver(private val context: Context) {
         scope.cancel()
     }
 
-    private fun updateWidget() {
+    private fun refreshAll() {
         scope.launch {
             try {
                 SyncGlanceWidget.updateAll(context)
+                ActionsGlanceWidget.updateAll(context)
+                CompactGlanceWidget.updateAll(context)
             } catch (_: Exception) {
             }
         }
@@ -64,7 +66,7 @@ class WidgetUpdateObserver(private val context: Context) {
             WorkManager.getInstance(context)
                 .enqueueUniquePeriodicWork(
                     "widget_update_periodic",
-                    androidx.work.ExistingPeriodicWorkPolicy.KEEP,
+                    ExistingPeriodicWorkPolicy.KEEP,
                     updateRequest
                 )
         } catch (_: Exception) {
@@ -79,6 +81,8 @@ class WidgetUpdateWorker(
     override suspend fun doWork(): Result {
         return try {
             SyncGlanceWidget.updateAll(applicationContext)
+            ActionsGlanceWidget.updateAll(applicationContext)
+            CompactGlanceWidget.updateAll(applicationContext)
             Result.success()
         } catch (_: Exception) {
             Result.retry()
