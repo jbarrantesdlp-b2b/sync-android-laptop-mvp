@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.SyncApp" parent="Theme.Material3.DayNight.NoActionBar" />
+    <style name="Theme.SyncApp" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:statusBarColor">#050811</item>
+        <item name="android:navigationBarColor">#050811</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowBackground">#050811</item>
+    </style>
 </resources>
