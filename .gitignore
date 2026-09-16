@@ -20,3 +20,9 @@ set
 *.log
 # icon factory scratch
 brand/out/_board/
+
+# Environment & Secrets
+.env
+.env.*
+!.env.example
+*.env
