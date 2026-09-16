@@ -215,11 +215,13 @@ fun SettingsScreen(
         Scaffold(
             containerColor = DesignTokens.CanvasBackground,
             topBar = {
-                SyncEngineTopBar(
-                    status = connectionStatus,
-                    onOpenSettings = { showSettingsSheet = true },
-                    modifier = Modifier.statusBarsPadding()
-                )
+                if (currentTab != AppTab.Home && currentTab != AppTab.Devices) {
+                    SyncEngineTopBar(
+                        status = connectionStatus,
+                        onOpenSettings = { showSettingsSheet = true },
+                        modifier = Modifier.statusBarsPadding()
+                    )
+                }
             },
             bottomBar = {
                 NavigationBar(

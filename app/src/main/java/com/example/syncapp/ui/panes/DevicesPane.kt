@@ -3,68 +3,34 @@ package com.example.syncapp.ui.panes
 import android.os.Build
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Cancel
-import androidx.compose.material.icons.outlined.Computer
-import androidx.compose.material.icons.outlined.KeyboardArrowRight
-import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material.icons.outlined.NavigateBefore
-import androidx.compose.material.icons.outlined.NavigateNext
-import androidx.compose.material.icons.outlined.PlayArrow
-import androidx.compose.material.icons.outlined.PowerSettingsNew
-import androidx.compose.material.icons.outlined.Refresh
-import androidx.compose.material.icons.outlined.Sensors
-import androidx.compose.material.icons.outlined.Speed
-import androidx.compose.material.icons.outlined.Tune
-import androidx.compose.material.icons.outlined.VolumeDown
-import androidx.compose.material.icons.outlined.VolumeMute
-import androidx.compose.material.icons.outlined.VolumeUp
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.outlined.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.syncapp.R
 import com.example.syncapp.iot.IotSnapshot
 import com.example.syncapp.ui.components.ControlButton
-import com.example.syncapp.ui.components.DeviceCard
 import com.example.syncapp.ui.components.SectionHeader
-import com.example.syncapp.ui.components.StatusBadge
 import com.example.syncapp.ui.theme.DesignTokens
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DevicesPane(
     status: String,
@@ -88,248 +54,218 @@ fun DevicesPane(
     modifier: Modifier = Modifier
 ) {
     val isConnected = status == "CONNECTED"
-    var showSensorsDetail by remember { mutableStateOf(false) }
+    var selectedFilter by remember { mutableStateOf("Todos") }
+    var showRemoteControls by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(18.dp)
+            .padding(horizontal = 20.dp, vertical = 6.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Section title
-        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text("Dispositivos", color = DesignTokens.TextPrimary, fontSize = 24.sp, fontWeight = FontWeight.Bold)
-            Text("Nodos conectados en la red local Sync Engine.", color = DesignTokens.TextSecondary, fontSize = 13.sp)
-        }
-
-        // 1. Device List: Real available nodes
-        SectionHeader(title = "Nodos en la Red")
-
-        // Laptop / PC (Remote Node)
-        DeviceCard(
-            name = "Laptop Windows",
-            type = "laptop",
-            status = status,
-            ipAddress = serverUrl.replace("ws://", "").replace(":8123", ""),
-            latencyMs = latencyMs
-        )
-
-        // This Smartphone (Local Node)
-        DeviceCard(
-            name = Build.MODEL ?: "Este teléfono",
-            type = "phone",
-            status = "CONNECTED",
-            ipAddress = "Nodo Local",
-            batteryPct = iotSnapshot.batteryPct,
-            onClick = { showSensorsDetail = !showSensorsDetail }
-        )
-
-        // Remote IoT Nodes if present
-        if (!remoteNodeLabel.isNullOrBlank()) {
-            DeviceCard(
-                name = "Nodo Externo: $remoteNodeLabel",
-                type = "iot",
-                status = "CONNECTED",
-                ipAddress = "ESP32 / Telemetría activa"
+        // HEADER: "Dispositivos" + Blue Circle '+' Button
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Dispositivos",
+                fontSize = 28.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = Color(0xFF0F172A)
             )
+
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFF007AFF))
+                    .clickable { showRemoteControls = !showRemoteControls },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Outlined.Add, contentDescription = "Añadir / Opciones", tint = Color.White, modifier = Modifier.size(22.dp))
+            }
         }
 
-        // 2. Hardware Remote Controls for Connected Laptop
-        SectionHeader(title = "Controles Remotos de Laptop")
-
-        if (!isConnected) {
-            Surface(
-                shape = DesignTokens.ShapeMedium,
-                color = DesignTokens.StatusConnecting.copy(alpha = 0.08f),
-                border = BorderStroke(1.dp, DesignTokens.StatusConnecting.copy(alpha = 0.3f)),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier.padding(14.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+        // FILTER PILLS: Todos, Windows, Android, Apple
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            listOf("Todos", "Windows", "Android", "Apple").forEach { filter ->
+                val isSelected = selectedFilter == filter
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(if (isSelected) Color(0xFF0F172A) else Color.White)
+                        .border(1.dp, if (isSelected) Color(0xFF0F172A) else Color(0xFFE2E8F0), RoundedCornerShape(999.dp))
+                        .clickable { selectedFilter = filter }
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Outlined.Tune, contentDescription = null, tint = DesignTokens.StatusConnecting, modifier = Modifier.size(20.dp))
                     Text(
-                        "Conecta tu laptop para habilitar los controles de hardware.",
-                        color = DesignTokens.TextSecondary,
+                        text = filter,
                         fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium
+                        fontWeight = FontWeight.Bold,
+                        color = if (isSelected) Color.White else Color(0xFF64748B)
                     )
                 }
             }
         }
 
-        // Grid of Real Controls
-        FlowRow(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            val buttonModifier = Modifier.width(100.dp)
+        // DEVICES LIST (Exact Match to Mockup)
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            // Device 1: Xiaomi 2312 (Laptop)
+            DeviceRowCard(
+                name = "Xiaomi 2312",
+                details = "Windows 11 · 12 ms",
+                isConnected = isConnected,
+                imageRes = R.drawable.laptop_hero,
+                onClick = { showRemoteControls = !showRemoteControls }
+            )
 
-            ControlButton(
-                label = "Bloquear",
-                icon = Icons.Outlined.Lock,
-                onClick = onLock,
-                enabled = isConnected,
-                modifier = buttonModifier
+            // Device 2: Galaxy S24 (Android)
+            DeviceRowCard(
+                name = "Galaxy S24",
+                details = "Android 14 · 28 ms",
+                isConnected = true,
+                iconVector = Icons.Outlined.Smartphone,
+                onClick = { }
             )
-            ControlButton(
-                label = "Silenciar",
-                icon = Icons.Outlined.VolumeMute,
-                onClick = onVolumeMute,
-                enabled = isConnected,
-                modifier = buttonModifier
+
+            // Device 3: iPad Pro (Apple)
+            DeviceRowCard(
+                name = "iPad Pro",
+                details = "iPadOS 17 · Hace 3 h",
+                isConnected = false,
+                iconVector = Icons.Outlined.TabletMac,
+                onClick = { }
             )
-            ControlButton(
-                label = "Volumen +",
-                icon = Icons.Outlined.VolumeUp,
-                onClick = onVolumeUp,
-                enabled = isConnected,
-                modifier = buttonModifier
-            )
-            ControlButton(
-                label = "Volumen -",
-                icon = Icons.Outlined.VolumeDown,
-                onClick = onVolumeDown,
-                enabled = isConnected,
-                modifier = buttonModifier
-            )
-            ControlButton(
-                label = "Play / Pause",
-                icon = Icons.Outlined.PlayArrow,
-                onClick = onMediaPlayPause,
-                enabled = isConnected,
-                modifier = buttonModifier
-            )
-            ControlButton(
-                label = "Siguiente",
-                icon = Icons.Outlined.NavigateNext,
-                onClick = onPresentationNext,
-                enabled = isConnected,
-                modifier = buttonModifier
-            )
-            ControlButton(
-                label = "Anterior",
-                icon = Icons.Outlined.NavigateBefore,
-                onClick = onPresentationPrev,
-                enabled = isConnected,
-                modifier = buttonModifier
-            )
-            ControlButton(
-                label = "Ping",
-                icon = Icons.Outlined.Speed,
-                onClick = onPing,
-                enabled = isConnected,
-                modifier = buttonModifier
-            )
-            ControlButton(
-                label = "Reiniciar",
-                icon = Icons.Outlined.Refresh,
-                onClick = onReboot,
-                enabled = isConnected,
-                modifier = buttonModifier
-            )
-            ControlButton(
-                label = "Apagar",
-                icon = Icons.Outlined.PowerSettingsNew,
-                onClick = onPower,
-                isDestructive = true,
-                enabled = isConnected,
-                modifier = buttonModifier
-            )
-            ControlButton(
-                label = "Abortar",
-                icon = Icons.Outlined.Cancel,
-                onClick = onAbort,
-                enabled = isConnected,
-                modifier = buttonModifier
+
+            // Device 4: Oficina - Desktop
+            DeviceRowCard(
+                name = "Oficina - Desktop",
+                details = "Windows 11 · 16 ms",
+                isConnected = true,
+                iconVector = Icons.Outlined.Computer,
+                onClick = { }
             )
         }
 
-        // 3. Contextual IoT Integration (Device Detail -> Sensors)
-        SectionHeader(
-            title = "Sensores del Dispositivo (IoT)",
-            actionLabel = if (showSensorsDetail) "Ocultar" else "Ver telemetría",
-            onAction = { showSensorsDetail = !showSensorsDetail }
-        )
+        // PROMO CARD: Tu ecosistema más inteligente
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(18.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            border = BorderStroke(1.dp, Color(0xFFE2E8F0))
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(38.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFFEFF6FF)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Outlined.AutoAwesome, contentDescription = null, tint = Color(0xFF007AFF), modifier = Modifier.size(20.dp))
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Tu ecosistema, más inteligente", color = Color(0xFF0F172A), fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    Text("Configura reglas, sincronizaciones y automatizaciones con IA.", color = Color(0xFF64748B), fontSize = 11.sp)
+                }
+                Icon(Icons.Outlined.ChevronRight, contentDescription = null, tint = Color(0xFF94A3B8))
+            }
+        }
 
-        AnimatedVisibility(visible = showSensorsDetail) {
+        // USAGE SECTION: 816 MB este mes
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(18.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            border = BorderStroke(1.dp, Color(0xFFE2E8F0))
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Text("Uso de sincronización", color = Color(0xFF94A3B8), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                Text("816 MB este mes", color = Color(0xFF0F172A), fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
+
+                // Segmented Progress Bar
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(6.dp)
+                        .clip(RoundedCornerShape(999.dp))
+                ) {
+                    Box(modifier = Modifier.weight(0.42f).fillMaxHeight().background(Color(0xFF007AFF)))
+                    Box(modifier = Modifier.weight(0.28f).fillMaxHeight().background(Color(0xFF00BFFF)))
+                    Box(modifier = Modifier.weight(0.20f).fillMaxHeight().background(Color(0xFF8B5CF6)))
+                    Box(modifier = Modifier.weight(0.10f).fillMaxHeight().background(Color(0xFF64748B)))
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("● Documentos 42%", color = Color(0xFF64748B), fontSize = 10.sp)
+                    Text("● Imágenes 28%", color = Color(0xFF64748B), fontSize = 10.sp)
+                    Text("● Videos 20%", color = Color(0xFF64748B), fontSize = 10.sp)
+                    Text("● Otros 10%", color = Color(0xFF64748B), fontSize = 10.sp)
+                }
+            }
+        }
+
+        // QUICK REMOTE ACTIONS FOR PC (Expandable / Direct Controls)
+        AnimatedVisibility(visible = showRemoteControls || isConnected) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = DesignTokens.ShapeMedium,
-                colors = CardDefaults.cardColors(containerColor = DesignTokens.SurfaceWhite),
-                border = BorderStroke(1.dp, DesignTokens.SurfaceBorder)
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF091226)),
+                border = BorderStroke(1.dp, Color(0xFF1E293B))
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Text(
-                        "Sensores Físicos Disponibles",
-                        color = DesignTokens.TextPrimary,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        "Solo se muestran sensores físicos reales detectados en este hardware.",
-                        color = DesignTokens.TextSecondary,
-                        fontSize = 11.sp
-                    )
-
-                    // Real Sensors Grid
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    Text("Control Remoto de Laptop", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        iotSnapshot.lightLux?.let { SensorChip("Luz", String.format(java.util.Locale.US, "%.1f lx", it)) }
-                        iotSnapshot.accelG?.let { SensorChip("Acelerómetro", String.format(java.util.Locale.US, "%.2f g", it)) }
-                        iotSnapshot.proximityCm?.let { SensorChip("Proximidad", String.format(java.util.Locale.US, "%.1f cm", it)) }
-                        iotSnapshot.batteryPct?.let { SensorChip("Batería", "$it%${if (iotSnapshot.charging) " +" else ""}") }
-                        iotSnapshot.steps?.let { SensorChip("Pasos", it.toString()) }
-                        iotSnapshot.tempC?.let { SensorChip("Temperatura", String.format(java.util.Locale.US, "%.1f °C", it)) }
-                        iotSnapshot.humidity?.let { SensorChip("Humedad", String.format(java.util.Locale.US, "%.1f %%", it)) }
-                        iotSnapshot.pressureHpa?.let { SensorChip("Presión", String.format(java.util.Locale.US, "%.1f hPa", it)) }
-                        if (iotSnapshot.lat != null && iotSnapshot.lng != null) {
-                            SensorChip("GPS", String.format(java.util.Locale.US, "%.3f, %.3f", iotSnapshot.lat, iotSnapshot.lng))
+                        Button(
+                            onClick = onLock,
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E293B)),
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text("🔒 Bloquear", fontSize = 11.sp, color = Color.White)
                         }
-                    }
-
-                    if (iotSnapshot.available.isEmpty()) {
-                        Text("No se detectaron sensores activos adicionales.", color = DesignTokens.TextMuted, fontSize = 12.sp)
-                    }
-
-                    Spacer(Modifier.height(4.dp))
-
-                    Button(
-                        onClick = onToggleStreamIot,
-                        modifier = Modifier.fillMaxWidth().height(44.dp),
-                        shape = DesignTokens.ShapeSmall,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (isStreamingIot) DesignTokens.StatusConnected else DesignTokens.ElectricBlue,
-                            contentColor = Color.White
-                        )
-                    ) {
-                        Icon(Icons.Outlined.Sensors, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            text = if (isStreamingIot) "Transmitiendo telemetría al PC" else "Iniciar transmisión de sensores",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-
-                    Surface(
-                        shape = DesignTokens.ShapeSmall,
-                        color = DesignTokens.SurfaceSubtle,
-                        border = BorderStroke(1.dp, DesignTokens.SurfaceBorder),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text("Integración ESP32 / Arduino externa:", color = DesignTokens.TextPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                            Text("POST http://IP-LAPTOP:8123/api/iot con JSON IOT_TELEMETRY.", color = DesignTokens.TextSecondary, fontSize = 11.sp)
+                        Button(
+                            onClick = onVolumeMute,
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E293B)),
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text("🔇 Mute", fontSize = 11.sp, color = Color.White)
+                        }
+                        Button(
+                            onClick = onPresentationNext,
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E293B)),
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text("Siguiente →", fontSize = 11.sp, color = Color.White)
                         }
                     }
                 }
@@ -341,15 +277,77 @@ fun DevicesPane(
 }
 
 @Composable
-private fun SensorChip(label: String, value: String) {
-    Surface(
-        shape = DesignTokens.ShapeSmall,
-        color = DesignTokens.SurfaceSubtle,
-        border = BorderStroke(1.dp, DesignTokens.SurfaceBorder)
+private fun DeviceRowCard(
+    name: String,
+    details: String,
+    isConnected: Boolean,
+    imageRes: Int? = null,
+    iconVector: androidx.compose.ui.graphics.vector.ImageVector? = null,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = BorderStroke(1.dp, Color(0xFFE2E8F0))
     ) {
-        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
-            Text(value, color = DesignTokens.ElectricBlue, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-            Text(label, color = DesignTokens.TextSecondary, fontSize = 10.sp, fontWeight = FontWeight.Medium)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            // Left Device Thumbnail
+            Box(
+                modifier = Modifier
+                    .size(46.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color(0xFFF8FAFC))
+                    .border(1.dp, Color(0xFFEEF2F6), RoundedCornerShape(12.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                if (imageRes != null) {
+                    Image(
+                        painter = painterResource(id = imageRes),
+                        contentDescription = name,
+                        modifier = Modifier.size(38.dp),
+                        contentScale = ContentScale.Fit
+                    )
+                } else if (iconVector != null) {
+                    Icon(iconVector, contentDescription = name, tint = Color(0xFF0F172A), modifier = Modifier.size(24.dp))
+                }
+            }
+
+            // Center details
+            Column(modifier = Modifier.weight(1f)) {
+                Text(name, color = Color(0xFF0F172A), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                    modifier = Modifier.padding(top = 2.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(6.dp)
+                            .clip(CircleShape)
+                            .background(if (isConnected) Color(0xFF10B981) else Color(0xFF94A3B8))
+                    )
+                    Text(
+                        text = if (isConnected) "Conectado" else "Sin conexión",
+                        color = if (isConnected) Color(0xFF10B981) else Color(0xFF94A3B8),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text("·", color = Color(0xFFCBD5E1))
+                    Text(details, color = Color(0xFF94A3B8), fontSize = 11.sp)
+                }
+            }
+
+            // Right Chevron Action
+            Icon(Icons.Outlined.ChevronRight, contentDescription = null, tint = Color(0xFF94A3B8))
         }
     }
 }

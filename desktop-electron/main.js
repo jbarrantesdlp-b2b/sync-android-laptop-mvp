@@ -37,12 +37,14 @@ function getPrimaryLocalIp() {
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 1100,
-    height: 820,
+    width: 1240,
+    height: 860,
+    minWidth: 1080,
+    minHeight: 740,
     resizable: true,
     autoHideMenuBar: true,
-    title: 'SYNC ENGINE \u2014 By Barrantes Co.',
-    backgroundColor: '#050811',
+    title: 'SYNC ENGINE — By Barrantes Co.',
+    backgroundColor: '#F3F5F9',
     icon: path.join(__dirname, 'icon.png'),
     webPreferences: {
       nodeIntegration: true,

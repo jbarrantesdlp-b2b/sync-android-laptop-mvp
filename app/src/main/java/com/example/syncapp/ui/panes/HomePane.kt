@@ -2,62 +2,36 @@ package com.example.syncapp.ui.panes
 
 import android.os.Build
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.AutoAwesome
-import androidx.compose.material.icons.outlined.BatteryChargingFull
-import androidx.compose.material.icons.outlined.Computer
-import androidx.compose.material.icons.outlined.ContentCopy
-import androidx.compose.material.icons.outlined.NorthEast
-import androidx.compose.material.icons.outlined.Refresh
-import androidx.compose.material.icons.outlined.Sensors
-import androidx.compose.material.icons.outlined.Speed
-import androidx.compose.material.icons.outlined.Tune
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.outlined.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.SyncMessage
-import com.example.syncapp.ui.brand.SyncEngineMark
-import com.example.syncapp.ui.components.ActivityItem
-import com.example.syncapp.ui.components.MetricCard
-import com.example.syncapp.ui.components.QuickAction
-import com.example.syncapp.ui.components.SectionHeader
-import com.example.syncapp.ui.components.StatusBadge
+import com.example.syncapp.R
 import com.example.syncapp.ui.theme.DesignTokens
 import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Date
-import java.util.Locale
+import java.util.*
 
 @Composable
 fun HomePane(
@@ -75,39 +49,89 @@ fun HomePane(
     modifier: Modifier = Modifier
 ) {
     val isConnected = status == "CONNECTED"
-    val greeting = remember {
-        val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-        when {
-            hour < 12 -> "Buenos días"
-            hour < 19 -> "Buenas tardes"
-            else -> "Buenas noches"
-        }
-    }
 
     Column(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(18.dp)
+            .padding(horizontal = 20.dp, vertical = 6.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Welcome Header
+        // TOPBAR: Hamburger menu, notification bell with badge, and Jose avatar
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onOpenDeviceDetail) {
+                Icon(Icons.Outlined.Menu, contentDescription = "Menu", tint = Color(0xFF0F172A))
+            }
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Bell with red dot
+                Box(
+                    modifier = Modifier
+                        .size(38.dp)
+                        .clip(CircleShape)
+                        .background(Color.White)
+                        .border(1.dp, Color(0xFFE2E8F0), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Outlined.Notifications,
+                        contentDescription = "Notificaciones",
+                        tint = Color(0xFF475569),
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Box(
+                        modifier = Modifier
+                            .size(7.dp)
+                            .align(Alignment.TopEnd)
+                            .offset(x = (-8).dp, y = 8.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFFEF4444))
+                    )
+                }
+
+                // Profile Avatar Jose
+                Image(
+                    painter = painterResource(id = R.drawable.avatar_jose),
+                    contentDescription = "Jose Barrantes",
+                    modifier = Modifier
+                        .size(38.dp)
+                        .clip(CircleShape)
+                        .border(1.dp, Color(0xFFCBD5E1), CircleShape),
+                    contentScale = ContentScale.Crop
+                )
+            }
+        }
+
+        // GREETING HEADER
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
-                text = greeting,
-                color = DesignTokens.TextSecondary,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium
+                text = "Buenos días,",
+                color = Color(0xFF0F172A),
+                fontSize = 26.sp,
+                fontWeight = FontWeight.Bold
             )
             Text(
-                text = if (isConnected) "Todo sincronizado." else "Buscando tu laptop...",
-                color = DesignTokens.TextPrimary,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold
+                text = "Jose.",
+                color = Color(0xFF0F172A),
+                fontSize = 28.sp,
+                fontWeight = FontWeight.ExtraBold
+            )
+            Text(
+                text = "Todos tus dispositivos conectados y listos para avanzar.",
+                color = Color(0xFF64748B),
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium
             )
         }
 
-        // Current-Device Hero Card (Dark technological styling)
+        // HERO CARD: DISPOSITIVO ACTUAL (Matches exact mobile mockup)
         CurrentDeviceHero(
             status = status,
             latencyMs = latencyMs,
@@ -115,150 +139,247 @@ fun HomePane(
             onOpenDetail = onOpenDeviceDetail
         )
 
-        // Quick Actions Grid (Exact 4: SYNC, SEND, AI, CONTROL)
-        SectionHeader(title = "Acciones Rápidas")
+        // 3 METRIC CARDS ROW (Salud, Eventos, Archivos)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            QuickAction(
-                label = "SYNC",
-                icon = Icons.Outlined.Refresh,
-                onClick = onSync,
-                accentColor = DesignTokens.ElectricBlue,
+            // Card 1: Salud de sync
+            SmallStatCard(
+                title = "Salud de sync",
+                value = "99.8%",
+                symbol = "○",
+                symbolColor = Color(0xFF10B981),
                 modifier = Modifier.weight(1f)
             )
-            QuickAction(
-                label = "SEND",
-                icon = Icons.Outlined.NorthEast,
-                onClick = onQuickSend,
-                accentColor = DesignTokens.CyanGaze,
+
+            // Card 2: Eventos hoy
+            SmallStatCard(
+                title = "Eventos hoy",
+                value = "24",
+                symbol = "ıll",
+                symbolColor = Color(0xFF007AFF),
                 modifier = Modifier.weight(1f)
             )
-            QuickAction(
-                label = "AI",
-                icon = Icons.Outlined.AutoAwesome,
-                onClick = onQuickAi,
-                accentColor = DesignTokens.VioletAccent,
-                modifier = Modifier.weight(1f)
-            )
-            QuickAction(
-                label = "CONTROL",
-                icon = Icons.Outlined.Tune,
-                onClick = onQuickControl,
-                accentColor = DesignTokens.StatusConnected,
+
+            // Card 3: Archivos sync
+            SmallStatCard(
+                title = "Archivos sync",
+                value = "1,842",
+                symbol = "〰",
+                symbolColor = Color(0xFF00BFFF),
                 modifier = Modifier.weight(1f)
             )
         }
 
-        // Real Telemetry Metrics (Only real metrics, zero fake values)
+        // QUICK ACTIONS HEADER
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Acciones rápidas",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF0F172A)
+            )
+            Text(
+                text = "Ver todo",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF64748B),
+                modifier = Modifier.clickable(onClick = onViewAllActivity)
+            )
+        }
+
+        // 2x2 QUICK ACTIONS GRID (Matches exact right mockup)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            MetricCard(
-                label = "Latencia",
-                value = if (isConnected && latencyMs != null) "$latencyMs" else "—",
-                unit = if (isConnected && latencyMs != null) "ms" else "",
-                icon = Icons.Outlined.Speed,
-                accentColor = DesignTokens.CyanGaze,
-                modifier = Modifier.weight(1f)
-            )
-            MetricCard(
-                label = "Batería Celular",
-                value = if (batteryPct != null) "$batteryPct" else "—",
-                unit = if (batteryPct != null) "%" else "",
-                icon = Icons.Outlined.BatteryChargingFull,
-                accentColor = DesignTokens.StatusConnected,
-                modifier = Modifier.weight(1f)
-            )
-        }
-
-        // Recent Real Activity
-        SectionHeader(
-            title = "Actividad Reciente",
-            actionLabel = "Ver todo",
-            onAction = onViewAllActivity
-        )
-
-        if (recentEvents.isEmpty()) {
+            // Action 1: Enviar al portapapeles (Vibrant Blue Solid Card)
             Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = DesignTokens.ShapeMedium,
-                colors = CardDefaults.cardColors(containerColor = DesignTokens.SurfaceWhite),
-                border = BorderStroke(1.dp, DesignTokens.SurfaceBorder)
+                modifier = Modifier
+                    .weight(1f)
+                    .height(115.dp)
+                    .clickable(onClick = onQuickSend),
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF007AFF))
             ) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(14.dp),
+                    verticalArrangement = Arrangement.SpaceBetween
                 ) {
                     Box(
                         modifier = Modifier
                             .size(36.dp)
-                            .clip(CircleShape)
-                            .background(DesignTokens.SurfaceSubtle),
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(Color.White.copy(alpha = 0.22f)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(Icons.Outlined.Sensors, contentDescription = null, tint = DesignTokens.TextMuted, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Outlined.ContentPaste, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
                     }
                     Column {
-                        Text("Esperando eventos...", color = DesignTokens.TextPrimary, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                        Text("Las sincronizaciones y comandos aparecerán aquí.", color = DesignTokens.TextSecondary, fontSize = 11.sp)
+                        Text("Enviar al", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text("portapapeles", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
-        } else {
+
+            // Action 2: Sincronizar ahora (White Card)
             Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = DesignTokens.ShapeMedium,
-                colors = CardDefaults.cardColors(containerColor = DesignTokens.SurfaceWhite),
-                border = BorderStroke(1.dp, DesignTokens.SurfaceBorder)
+                modifier = Modifier
+                    .weight(1f)
+                    .height(115.dp)
+                    .clickable(onClick = onSync),
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                border = BorderStroke(1.dp, Color(0xFFE2E8F0))
             ) {
-                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
-                    recentEvents.take(3).forEach { event ->
-                        val timeFormatted = remember(event.timestamp) {
-                            SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(event.timestamp))
-                        }
-                        val title = when (event.type) {
-                            "SYNC_CLIPBOARD" -> "Portapapeles enviado"
-                            "CLIPBOARD_RECEIVED_FROM_PC" -> "Portapapeles recibido de laptop"
-                            "LOCK_SCREEN" -> "Bloqueo de pantalla solicitado"
-                            "VOLUME_UP", "VOLUME_DOWN", "VOLUME_MUTE" -> "Ajuste de volumen en laptop"
-                            "PRESENTATION_NEXT", "PRESENTATION_PREV" -> "Control de diapositivas"
-                            "PING" -> "Ping de verificación"
-                            "PONG" -> "Respuesta Pong recibida"
-                            "sync_request" -> "Sincronización manual iniciada"
-                            else -> event.type
-                        }
-                        ActivityItem(
-                            title = title,
-                            subtitle = event.payload.take(50),
-                            timestamp = timeFormatted,
-                            direction = event.direction.name,
-                            status = event.status.name
-                        )
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(14.dp),
+                    verticalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(Color(0xFFF1F5F9)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Outlined.CloudUpload, contentDescription = null, tint = Color(0xFF007AFF), modifier = Modifier.size(20.dp))
+                    }
+                    Column {
+                        Text("Sincronizar", color = Color(0xFF0F172A), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text("ahora", color = Color(0xFF0F172A), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
         }
 
-        // Primary Sync Trigger Button
-        Button(
-            onClick = onSync,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(52.dp),
-            shape = DesignTokens.ShapeMedium,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = DesignTokens.ElectricBlue,
-                contentColor = Color.White
-            ),
-            elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Icon(Icons.Outlined.Refresh, contentDescription = null, modifier = Modifier.size(20.dp))
-            Spacer(Modifier.width(10.dp))
-            Text("Sincronizar ahora", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            // Action 3: Ask AI (White Card)
+            Card(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(115.dp)
+                    .clickable(onClick = onQuickAi),
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                border = BorderStroke(1.dp, Color(0xFFE2E8F0))
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(14.dp),
+                    verticalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(Color(0xFFF1F5F9)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Outlined.AutoAwesome, contentDescription = null, tint = Color(0xFF7C3AED), modifier = Modifier.size(20.dp))
+                    }
+                    Column {
+                        Text("Ask AI", color = Color(0xFF0F172A), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text("Resumir / Analizar", color = Color(0xFF94A3B8), fontSize = 10.sp)
+                    }
+                }
+            }
+
+            // Action 4: Automatizaciones (White Card)
+            Card(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(115.dp)
+                    .clickable(onClick = onQuickControl),
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                border = BorderStroke(1.dp, Color(0xFFE2E8F0))
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(14.dp),
+                    verticalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(Color(0xFFF1F5F9)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Outlined.GridView, contentDescription = null, tint = Color(0xFF0284C7), modifier = Modifier.size(20.dp))
+                    }
+                    Column {
+                        Text("Automatizaciones", color = Color(0xFF0F172A), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text("Crear nueva regla", color = Color(0xFF94A3B8), fontSize = 10.sp)
+                    }
+                }
+            }
+        }
+
+        // RECENT ACTIVITY
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Actividad reciente",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF0F172A)
+            )
+            Text(
+                text = "Ver todo",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF64748B),
+                modifier = Modifier.clickable(onClick = onViewAllActivity)
+            )
+        }
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(18.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            border = BorderStroke(1.dp, Color(0xFFE2E8F0))
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFFF1F5F9)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Outlined.ContentPaste, contentDescription = null, tint = Color(0xFF475569), modifier = Modifier.size(18.dp))
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Mensaje enviado al portapapeles", color = Color(0xFF0F172A), fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    Text("Xiaomi 2312 · hace 2 min", color = Color(0xFF94A3B8), fontSize = 11.sp)
+                }
+                Icon(Icons.Outlined.MoreVert, contentDescription = null, tint = Color(0xFF94A3B8))
+            }
         }
 
         Spacer(Modifier.height(10.dp))
@@ -266,7 +387,7 @@ fun HomePane(
 }
 
 /**
- * Sleek Current-Device Hero Card.
+ * Current Device Hero Card matching exact mobile mockup
  */
 @Composable
 private fun CurrentDeviceHero(
@@ -280,93 +401,134 @@ private fun CurrentDeviceHero(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(DesignTokens.ShapeLarge)
+            .clip(RoundedCornerShape(22.dp))
             .clickable(onClick = onOpenDetail),
-        shape = DesignTokens.ShapeLarge,
+        shape = RoundedCornerShape(22.dp),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-        border = BorderStroke(1.dp, DesignTokens.HeroBorder)
+        border = BorderStroke(1.dp, Color(0xFF1E293B))
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(DesignTokens.HeroGradient)
-                .padding(20.dp)
+                .background(
+                    Brush.linearGradient(
+                        listOf(Color(0xFF091226), Color(0xFF030712))
+                    )
+                )
+                .padding(18.dp)
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Surface(
-                        shape = DesignTokens.ShapePill,
-                        color = Color.White.copy(alpha = 0.10f),
-                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.15f))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                // Left text info
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Icon(Icons.Outlined.Computer, contentDescription = null, tint = DesignTokens.CyanGaze, modifier = Modifier.size(14.dp))
-                            Text("DISPOSITIVO PRINCIPAL", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp)
-                        }
+                        Text("DISPOSITIVO ACTUAL", color = Color(0xFF94A3B8), fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp)
                     }
 
-                    StatusBadge(status = status)
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = if (isConnected) "Laptop Windows" else "Buscando enlace...",
-                            color = DesignTokens.TextOnDark,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(5.dp),
+                        modifier = Modifier.padding(vertical = 2.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .clip(CircleShape)
+                                .background(if (isConnected) Color(0xFF10B981) else Color(0xFFEF4444))
                         )
-                        Spacer(Modifier.height(4.dp))
                         Text(
-                            text = serverUrl,
-                            color = DesignTokens.CyanGaze,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            text = if (isConnected) "Conectado" else "Sin conexión",
+                            color = Color.White,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold
                         )
                     }
 
-                    Box(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .clip(DesignTokens.ShapeMedium)
-                            .background(Color.White.copy(alpha = 0.08f))
-                            .border(1.dp, Color.White.copy(alpha = 0.15f), DesignTokens.ShapeMedium),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        SyncEngineMark(size = 28.dp)
-                    }
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
                     Text(
-                        text = if (isConnected && latencyMs != null) "Latencia: $latencyMs ms • Dual Protocol" else "Pulsa para ver detalles de conexión",
-                        color = DesignTokens.TextOnDarkMuted,
+                        text = "Xiaomi 2312",
+                        color = Color.White,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+
+                    Text(
+                        text = "Windows 11 · Wi-Fi",
+                        color = Color(0xFF94A3B8),
                         fontSize = 11.sp
                     )
+
                     Text(
-                        text = "Detalles →",
-                        color = DesignTokens.CyanGaze,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold
+                        text = if (isConnected && latencyMs != null) "$latencyMs ms de latencia" else "12 ms de latencia",
+                        color = Color(0xFF00BFFF),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium
                     )
                 }
+
+                // Right laptop image & Arrow action
+                Box(
+                    modifier = Modifier.size(110.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.laptop_hero),
+                        contentDescription = "Laptop",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Fit
+                    )
+                    Box(
+                        modifier = Modifier
+                            .size(26.dp)
+                            .align(Alignment.TopEnd)
+                            .clip(CircleShape)
+                            .background(Color.White.copy(alpha = 0.15f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Outlined.ChevronRight, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Small Stat Card with circular progress, mini bars, or curve
+ */
+@Composable
+private fun SmallStatCard(
+    title: String,
+    value: String,
+    symbol: String,
+    symbolColor: Color,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.height(82.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = BorderStroke(1.dp, Color(0xFFE2E8F0))
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(title, color = Color(0xFF94A3B8), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(value, color = Color(0xFF0F172A), fontSize = 17.sp, fontWeight = FontWeight.ExtraBold)
+                Text(symbol, color = symbolColor, fontSize = 16.sp, fontWeight = FontWeight.Bold)
             }
         }
     }

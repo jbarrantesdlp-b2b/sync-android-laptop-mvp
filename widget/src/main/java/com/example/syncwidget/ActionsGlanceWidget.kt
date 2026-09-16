@@ -47,29 +47,37 @@ object ActionsGlanceWidget : GlanceAppWidget() {
             ) {
                 Row(modifier = GlanceModifier.fillMaxWidth().defaultWeight()) {
                     ActionTile(
-                        "\u21bb",
-                        "Sync",
-                        GlanceModifier.defaultWeight().clickable(actionRunCallback<ManualSyncAction>())
+                        symbol = "⎘",
+                        label = "Enviar",
+                        bgRes = R.drawable.widget_tile_blue,
+                        symbolColor = Color.White,
+                        modifier = GlanceModifier.defaultWeight().clickable(actionStartActivity(openAppIntent("clipboard")))
                     )
                     Spacer(GlanceModifier.width(8.dp))
                     ActionTile(
-                        "\u2191",
-                        "Enviar",
-                        GlanceModifier.defaultWeight().clickable(actionStartActivity(openAppIntent("clipboard")))
+                        symbol = "☁",
+                        label = "Sync",
+                        bgRes = R.drawable.widget_tile_bg,
+                        symbolColor = Color.White,
+                        modifier = GlanceModifier.defaultWeight().clickable(actionRunCallback<ManualSyncAction>())
                     )
                 }
                 Spacer(GlanceModifier.height(8.dp))
                 Row(modifier = GlanceModifier.fillMaxWidth().defaultWeight()) {
                     ActionTile(
-                        "\uD83D\uDD12",
-                        "Bloquear",
-                        GlanceModifier.defaultWeight().clickable(actionRunCallback<LockPcAction>())
+                        symbol = "✦",
+                        label = "Ask AI",
+                        bgRes = R.drawable.widget_tile_bg,
+                        symbolColor = Color(0xFF38BDF8),
+                        modifier = GlanceModifier.defaultWeight().clickable(actionStartActivity(openAppIntent("ai")))
                     )
                     Spacer(GlanceModifier.width(8.dp))
                     ActionTile(
-                        "\u2726",
-                        "IA",
-                        GlanceModifier.defaultWeight().clickable(actionStartActivity(openAppIntent("ai")))
+                        symbol = "⊞",
+                        label = "Automatizar",
+                        bgRes = R.drawable.widget_tile_bg,
+                        symbolColor = Color(0xFF94A3B8),
+                        modifier = GlanceModifier.defaultWeight().clickable(actionStartActivity(openAppIntent("devices")))
                     )
                 }
             }
@@ -79,11 +87,17 @@ object ActionsGlanceWidget : GlanceAppWidget() {
 
 @Suppress("RestrictedApi")
 @Composable
-private fun ActionTile(symbol: String, label: String, modifier: GlanceModifier) {
+private fun ActionTile(
+    symbol: String,
+    label: String,
+    bgRes: Int,
+    symbolColor: Color,
+    modifier: GlanceModifier
+) {
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(ImageProvider(R.drawable.widget_tile_bg))
+            .background(ImageProvider(bgRes))
             .cornerRadius(18.dp)
             .padding(6.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -92,17 +106,19 @@ private fun ActionTile(symbol: String, label: String, modifier: GlanceModifier) 
         Text(
             text = symbol,
             style = TextStyle(
-                fontSize = 18.sp,
-                color = ColorProvider(Color(0xFF00BFFF)),
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = ColorProvider(symbolColor),
                 textAlign = TextAlign.Center
             )
         )
+        Spacer(GlanceModifier.height(2.dp))
         Text(
             text = label,
             style = TextStyle(
-                fontSize = 10.sp,
+                fontSize = 11.sp,
                 fontWeight = FontWeight.Medium,
-                color = ColorProvider(Color(0xFFE2E8F0)),
+                color = ColorProvider(Color.White),
                 textAlign = TextAlign.Center
             )
         )

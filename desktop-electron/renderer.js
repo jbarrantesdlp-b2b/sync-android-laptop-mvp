@@ -1,128 +1,185 @@
 const { ipcRenderer } = require('electron');
 const QRCode = require('qrcode');
 
-const statusPill = document.getElementById('status-pill');
-const statusText = document.getElementById('status-text');
-const deviceName = document.getElementById('device-name');
-const serverUrl = document.getElementById('server-url');
-const logContent = document.getElementById('log-content');
+// UI Elements
+const liveFullDate = document.getElementById('live-full-date');
+const heroHostname = document.getElementById('hero-hostname');
+const heroLatency = document.getElementById('hero-latency');
+const heroStatusLabel = document.getElementById('hero-status-label');
+const serverUrlDisplay = document.getElementById('server-url-display');
 const qrCanvas = document.getElementById('qr-canvas');
+const pairingModal = document.getElementById('pairing-modal');
+const btnCloseModal = document.getElementById('btn-close-modal');
+const btnOpenPairing = document.getElementById('btn-open-pairing');
+const btnSidebarDetails = document.getElementById('btn-sidebar-details');
+
 const clipboardInput = document.getElementById('clipboard-input');
 const sendClipboardBtn = document.getElementById('send-clipboard-btn');
+const btnActionClipboard = document.getElementById('btn-action-clipboard');
+const btnActionSync = document.getElementById('btn-action-sync');
+const btnActionAi = document.getElementById('btn-action-ai');
+const btnActionRules = document.getElementById('btn-action-rules');
 const lockBtn = document.getElementById('lock-btn');
 const clearLogBtn = document.getElementById('clear-log-btn');
-const liveClock = document.getElementById('live-clock');
-const liveDate = document.getElementById('live-date');
 
-function tickClock() {
+// Phone indicator in devices list
+const dotPhone = document.getElementById('dot-phone');
+const labelPhoneName = document.getElementById('label-phone-name');
+const pillPhoneStatus = document.getElementById('pill-phone-status');
+const txtPhoneLatency = document.getElementById('txt-phone-latency');
+const sidebarStatusSub = document.getElementById('sidebar-status-sub');
+const dockLatencyNum = document.getElementById('dock-latency-num');
+const statEventsCount = document.getElementById('stat-events-count');
+const activityTimeline = document.getElementById('activity-timeline-container');
+
+// Date Formatter (matches "JUEVES, 15 DE SEPTIEMBRE")
+function updateDate() {
   const now = new Date();
-  liveClock.textContent = now.toLocaleTimeString('es-PE', { hour: 'numeric', minute: '2-digit' });
-  liveDate.textContent = now.toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long' });
+  const options = { weekday: 'long', day: 'numeric', month: 'long' };
+  const str = now.toLocaleDateString('es-ES', options).toUpperCase();
+  if (liveFullDate) liveFullDate.textContent = str;
 }
-tickClock();
-setInterval(tickClock, 10000);
+updateDate();
+setInterval(updateDate, 60000);
 
-ipcRenderer.on('server-info', (event, data) => {
-  serverUrl.textContent = data.url;
-  QRCode.toCanvas(qrCanvas, data.url, {
-    width: 160,
-    margin: 1,
-    color: { dark: '#0F172A', light: '#FFFFFF' }
-  }, (error) => {
-    if (error) console.error('Error al generar QR en Canvas:', error);
+// Modal Controls
+function openModal() {
+  if (pairingModal) pairingModal.style.display = 'flex';
+}
+function closeModal() {
+  if (pairingModal) pairingModal.style.display = 'none';
+}
+
+if (btnOpenPairing) btnOpenPairing.addEventListener('click', openModal);
+if (btnSidebarDetails) btnSidebarDetails.addEventListener('click', openModal);
+if (btnCloseModal) btnCloseModal.addEventListener('click', closeModal);
+if (pairingModal) {
+  pairingModal.addEventListener('click', (e) => {
+    if (e.target === pairingModal) closeModal();
   });
-  appendLog('info', `Servidor activo en: ${data.url}`);
+}
+
+// Server URL & QR Code
+let currentServerUrl = 'ws://127.0.0.1:8123';
+ipcRenderer.on('server-info', (event, data) => {
+  currentServerUrl = data.url;
+  if (serverUrlDisplay) serverUrlDisplay.textContent = data.url;
+  if (qrCanvas) {
+    QRCode.toCanvas(qrCanvas, data.url, {
+      width: 160,
+      margin: 1,
+      color: { dark: '#0F172A', light: '#FFFFFF' }
+    }, (err) => {
+      if (err) console.error('Error QR:', err);
+    });
+  }
 });
 
+// Status & Telemetry Updates
 ipcRenderer.on('status-update', (event, data) => {
-  if (data.status === 'CONNECTED') {
-    statusPill.className = 'status-pill connected';
-    statusText.textContent = 'Conectado';
-    deviceName.textContent = data.device || 'Xiaomi 2312';
-    appendLog('connect', `Dispositivo conectado: ${data.device || 'Android'}`);
-  } else {
-    statusPill.className = 'status-pill disconnected';
-    statusText.textContent = 'Desconectado';
-    deviceName.textContent = 'Buscando celular\u2026';
-    appendLog('disconnect', 'Dispositivo desconectado');
+  const isConnected = data.status === 'CONNECTED';
+  const device = data.device || 'Android';
+
+  if (heroStatusLabel) heroStatusLabel.textContent = isConnected ? 'Conectado' : 'Buscando celular...';
+  if (sidebarStatusSub) sidebarStatusSub.textContent = isConnected ? 'Todo en orden' : 'Sin clientes activos';
+
+  if (pillPhoneStatus) {
+    pillPhoneStatus.className = `badge-status-pill ${isConnected ? 'online' : 'offline'}`;
+    pillPhoneStatus.textContent = isConnected ? 'Conectado' : 'Sin conexión';
   }
+  if (dotPhone) {
+    dotPhone.className = `device-status-dot ${isConnected ? 'online' : 'offline'}`;
+  }
+  if (labelPhoneName && isConnected) {
+    labelPhoneName.textContent = device.split(' ')[0] || 'Galaxy S24';
+  }
+});
+
+// Hardware telemetry (RAM, latency, stats)
+ipcRenderer.on('iot-telemetry', (event, payload) => {
+  // Real time latency or updates
 });
 
 ipcRenderer.on('log-message', (event, data) => {
-  appendLog(data.type || 'info', data.message);
+  addActivityRow(data.type, data.message);
 });
 
-ipcRenderer.on('iot-telemetry', (event, payload) => {
-  updateIot(payload || {});
-});
+function addActivityRow(type, text) {
+  if (!activityTimeline) return;
+  const now = new Date();
+  const time = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
 
-function fmt(v, unit) {
-  if (v === null || v === undefined || v === '') return '--';
-  const n = Number(v);
-  if (Number.isNaN(n)) return String(v);
-  return `${n.toFixed(1)}${unit}`;
-}
-
-function setText(id, text) {
-  const el = document.getElementById(id);
-  if (el) el.textContent = text;
-}
-
-function updateIot(payload) {
-  const s = payload.sensors || payload;
-  const source = payload.source || 'nodo';
-  const device = payload.device || '';
-  setText('iot-source', `${source}${device ? ' \u00b7 ' + device : ''} \u00b7 en vivo`);
-  setText('iot-light', fmt(s.lightLux, ' lx'));
-  setText('iot-accel', fmt(s.accelG, ' g'));
-  setText('iot-prox', fmt(s.proximityCm, ' cm'));
-  if (s.batteryPct === null || s.batteryPct === undefined) {
-    setText('iot-batt', '--');
-  } else {
-    setText('iot-batt', `${Math.round(Number(s.batteryPct))}%${s.charging ? ' +' : ''}`);
+  const row = document.createElement('div');
+  row.className = 'activity-row';
+  row.innerHTML = `
+    <div class="activity-icon-badge blue">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    </div>
+    <div class="activity-row-content">
+      <strong class="activity-row-title">${text}</strong>
+      <span class="activity-row-meta">En vivo · ${time}</span>
+    </div>
+    <button class="item-more-btn">⋮</button>
+  `;
+  activityTimeline.insertBefore(row, activityTimeline.firstChild);
+  if (activityTimeline.children.length > 6) {
+    activityTimeline.removeChild(activityTimeline.lastChild);
   }
-  setText('iot-steps', s.steps === null || s.steps === undefined ? '--' : String(s.steps));
-  setText('iot-temp', fmt(s.tempC, ' \u00b0C'));
-  setText('iot-hum', fmt(s.humidity, ' %'));
-  setText('iot-press', fmt(s.pressureHpa, ' hPa'));
-  if (s.lat != null && s.lng != null) {
-    setText('iot-gps', `${Number(s.lat).toFixed(4)}, ${Number(s.lng).toFixed(4)}`);
-  } else {
-    setText('iot-gps', '--');
-  }
-  const strip = document.getElementById('iot-strip');
-  if (strip) strip.classList.add('live');
 }
 
-function appendLog(type, text) {
-  const time = new Date().toLocaleTimeString('es-ES', { hour12: false });
-  const div = document.createElement('div');
-  div.className = `log-item ${type}`;
-  div.textContent = `[${time}] ${text}`;
-  logContent.appendChild(div);
-  logContent.scrollTop = logContent.scrollHeight;
-}
-
-function sendClipboard() {
-  const text = clipboardInput.value.trim();
+// Quick Actions
+function sendClipboard(customText) {
+  const text = customText || (clipboardInput ? clipboardInput.value.trim() : '');
   if (text) {
     ipcRenderer.send('send-clipboard-to-phone', text);
-    appendLog('data', `Texto enviado al celular: "${text}"`);
-    clipboardInput.value = '';
+    addActivityRow('data', `Portapapeles enviado: "${text.substring(0, 35)}..."`);
+    if (clipboardInput) clipboardInput.value = '';
+    closeModal();
   }
 }
 
-sendClipboardBtn.addEventListener('click', sendClipboard);
-clipboardInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') sendClipboard();
-});
+if (sendClipboardBtn) sendClipboardBtn.addEventListener('click', () => sendClipboard());
+if (clipboardInput) {
+  clipboardInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') sendClipboard();
+  });
+}
 
-lockBtn.addEventListener('click', () => {
-  ipcRenderer.send('lock-pc');
-  appendLog('info', 'Bloqueo de pantalla de PC\u2026');
-});
+if (btnActionClipboard) {
+  btnActionClipboard.addEventListener('click', () => {
+    openModal();
+    if (clipboardInput) clipboardInput.focus();
+  });
+}
 
-clearLogBtn.addEventListener('click', () => {
-  logContent.innerHTML = '';
-  appendLog('info', 'Registro limpiado');
-});
+if (btnActionSync) {
+  btnActionSync.addEventListener('click', () => {
+    ipcRenderer.send('send-clipboard-to-phone', 'SYNC_NOW');
+    addActivityRow('info', 'Sincronización manual de archivos solicitada');
+  });
+}
+
+if (btnActionAi) {
+  btnActionAi.addEventListener('click', () => {
+    openModal();
+  });
+}
+
+if (btnActionRules) {
+  btnActionRules.addEventListener('click', () => {
+    addActivityRow('info', 'Automatizaciones activas en segundo plano');
+  });
+}
+
+if (lockBtn) {
+  lockBtn.addEventListener('click', () => {
+    ipcRenderer.send('lock-pc');
+    addActivityRow('info', 'Bloqueo de PC ejecutado');
+  });
+}
+
+if (clearLogBtn) {
+  clearLogBtn.addEventListener('click', () => {
+    if (activityTimeline) activityTimeline.innerHTML = '';
+  });
+}

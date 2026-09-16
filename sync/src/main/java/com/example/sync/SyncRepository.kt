@@ -8,9 +8,11 @@ import com.example.data.SyncStatus
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import okhttp3.Call
 import okhttp3.Callback
@@ -92,6 +94,94 @@ class SyncRepository(
 
     fun startSync() {
         socketClient.connect()
+    }
+
+    fun autoDiscoverAndConnect(onConnected: ((String) -> Unit)? = null) {
+        scope.launch {
+            // 1. Probar primero la URL guardada si no es el placeholder del emulador
+            val savedUrl = try {
+                effectivePrefs?.serverUrlFlow?.first()
+            } catch (_: Exception) {
+                null
+            } ?: serverUrl
+
+            if (savedUrl.isNotBlank() && !savedUrl.contains("10.0.2.2")) {
+                connectToServer(savedUrl)
+                delay(1000)
+                if (isConnected()) {
+                    onConnected?.invoke(savedUrl)
+                    return@launch
+                }
+            }
+
+            // 2. Escanear automáticamente la subred Wi-Fi local en busca de Sync Engine (puerto 8123)
+            val discoveredIp = scanSubnetForSyncEngine()
+            if (discoveredIp != null) {
+                val fullUrl = "ws://$discoveredIp:8123"
+                effectivePrefs?.setServerUrl(fullUrl)
+                connectToServer(fullUrl)
+                onConnected?.invoke(fullUrl)
+            }
+        }
+    }
+
+    private fun getLocalWifiIp(): String? {
+        try {
+            val interfaces = java.net.NetworkInterface.getNetworkInterfaces()
+            while (interfaces.hasMoreElements()) {
+                val intf = interfaces.nextElement()
+                val addrs = intf.inetAddresses
+                while (addrs.hasMoreElements()) {
+                    val addr = addrs.nextElement()
+                    if (!addr.isLoopbackAddress && addr is java.net.Inet4Address) {
+                        val host = addr.hostAddress ?: continue
+                        if (host.startsWith("192.168.") || host.startsWith("10.") || host.startsWith("172.")) {
+                            return host
+                        }
+                    }
+                }
+            }
+        } catch (_: Exception) {}
+        return null
+    }
+
+    private suspend fun scanSubnetForSyncEngine(): String? = kotlinx.coroutines.withContext(Dispatchers.IO) {
+        val myIp = getLocalWifiIp() ?: return@withContext null
+        val prefix = myIp.substringBeforeLast(".")
+
+        val probeClient = OkHttpClient.Builder()
+            .connectTimeout(450, TimeUnit.MILLISECONDS)
+            .readTimeout(450, TimeUnit.MILLISECONDS)
+            .build()
+
+        val foundIp = kotlinx.coroutines.CompletableDeferred<String?>()
+
+        val jobs = (1..254).map { i ->
+            launch {
+                if (foundIp.isCompleted) return@launch
+                val targetIp = "$prefix.$i"
+                try {
+                    val req = Request.Builder()
+                        .url("http://$targetIp:8123/status")
+                        .build()
+                    probeClient.newCall(req).execute().use { resp ->
+                        if (resp.isSuccessful) {
+                            val body = resp.body?.string() ?: ""
+                            if (body.contains("Sync Engine") || body.contains("CONNECTED") || body.contains("hostName")) {
+                                foundIp.complete(targetIp)
+                            }
+                        }
+                    }
+                } catch (_: Exception) {}
+            }
+        }
+
+        kotlinx.coroutines.withTimeoutOrNull(2200) {
+            foundIp.await()
+        } ?: run {
+            jobs.forEach { it.cancel() }
+            null
+        }
     }
 
     fun connectToServer(url: String = serverUrl) {

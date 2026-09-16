@@ -27,8 +27,8 @@ object DesignTokens {
     val HeroDarkGradientStart = Color(0xFF0F172A)  // Slate dark
     val HeroDarkGradientEnd = Color(0xFF020617)    // Obsidian dark
     val HeroBorder = Color(0xFF1E293B)
-    val NavigationDarkBg = Color(0xFF0A0F1D)       // Dark navigation shell
-    val NavigationIndicator = Color(0xFF12233C)    // Indicator glow
+    val NavigationDarkBg = Color(0xFFFFFFFF)       // Clean white navigation bar
+    val NavigationIndicator = Color.Transparent   // No dark pill indicator
 
     // Accents & Actions
     val ElectricBlue = Color(0xFF007AFF)           // Primary electric blue

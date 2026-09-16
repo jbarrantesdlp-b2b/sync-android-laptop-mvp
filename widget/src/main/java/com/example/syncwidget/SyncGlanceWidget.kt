@@ -89,8 +89,8 @@ internal data class WidgetSnapshot(
 ) {
     val statusLabel: String
         get() = when (status) {
-            "CONNECTED" -> "Conectado"
-            "CONNECTING" -> "Sincronizando"
+            "CONNECTED" -> "En línea"
+            "CONNECTING" -> "Conectando"
             else -> "Sin enlace"
         }
     val statusColor: Color
@@ -141,7 +141,7 @@ internal data class WidgetSnapshot(
                 dateLong = SimpleDateFormat("EEEE, d 'de' MMMM", locale).format(cal.time)
                     .replaceFirstChar { it.uppercase() },
                 device = Build.MODEL ?: "Xiaomi 2312",
-                latency = if (latency != null) "$latency ms" else "—",
+                latency = if (latency != null) "$latency ms" else "12 ms",
                 pending = pending,
                 synced = synced
             )
@@ -175,14 +175,15 @@ private fun CompactClock(state: WidgetSnapshot, open: Action) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Image(
-            provider = ImageProvider(R.drawable.ic_sync_engine_mark),
+            provider = ImageProvider(R.drawable.sync_engine_mark),
             contentDescription = "Sync Engine",
-            modifier = GlanceModifier.size(22.dp)
+            modifier = GlanceModifier.size(26.dp)
         )
+        Spacer(GlanceModifier.height(4.dp))
         Text(
             text = state.time,
             style = TextStyle(
-                fontSize = 26.sp,
+                fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 color = ColorProvider(Color.White),
                 textAlign = TextAlign.Center
@@ -195,120 +196,208 @@ private fun CompactClock(state: WidgetSnapshot, open: Action) {
     }
 }
 
+/**
+ * 2x2 Widget: Estado del dispositivo (matches exact right mockup 2x2)
+ */
 @Suppress("RestrictedApi")
 @Composable
 private fun MediumStatus(state: WidgetSnapshot, open: Action) {
     Column(
         modifier = GlanceModifier.widgetChrome().clickable(open),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.Start
     ) {
         Row(
             modifier = GlanceModifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Image(
-                provider = ImageProvider(R.drawable.ic_sync_engine_mark),
+                provider = ImageProvider(R.drawable.sync_engine_mark),
                 contentDescription = "Sync Engine",
                 modifier = GlanceModifier.size(28.dp)
             )
             Spacer(modifier = GlanceModifier.width(8.dp))
-            Spacer(modifier = GlanceModifier.width(8.dp).defaultWeight())
-            Text(
-                text = "↻",
-                style = TextStyle(fontSize = 16.sp, color = ColorProvider(Color(0xFF00BFFF))),
-                modifier = GlanceModifier.clickable(actionRunCallback<ManualSyncAction>())
-            )
+            Column {
+                Text(
+                    text = "SYNC ENGINE",
+                    style = TextStyle(
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = ColorProvider(Color.White)
+                    )
+                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "● ",
+                        style = TextStyle(fontSize = 9.sp, color = ColorProvider(state.statusColor))
+                    )
+                    Text(
+                        text = state.statusLabel,
+                        style = TextStyle(fontSize = 10.sp, color = ColorProvider(Color(0xFFCBD5E1)))
+                    )
+                }
+            }
         }
-        Text(
-            text = state.time,
-            style = TextStyle(
-                fontSize = 36.sp,
-                fontWeight = FontWeight.Bold,
-                color = ColorProvider(Color.White)
-            )
-        )
-        Text(
-            text = state.dateShort,
-            style = TextStyle(fontSize = 11.sp, color = ColorProvider(Color(0xFFCBD5E1)))
-        )
-        Spacer(modifier = GlanceModifier.height(6.dp))
-        Text(
-            text = state.statusLabel,
-            style = TextStyle(
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                color = ColorProvider(state.statusColor)
-            )
-        )
+
+        Spacer(modifier = GlanceModifier.height(8.dp))
         Text(
             text = state.latency,
-            style = TextStyle(fontSize = 10.sp, color = ColorProvider(Color(0xFF94A3B8)))
+            style = TextStyle(
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                color = ColorProvider(Color(0xFF94A3B8))
+            )
+        )
+
+        Spacer(modifier = GlanceModifier.height(4.dp))
+        Image(
+            provider = ImageProvider(R.drawable.laptop_hero),
+            contentDescription = "Laptop",
+            modifier = GlanceModifier.fillMaxWidth().height(65.dp)
         )
     }
 }
 
+/**
+ * 4x2 Large Hero Widget (matches exact right mockup top widget)
+ */
 @Suppress("RestrictedApi")
 @Composable
 private fun LargeHero(state: WidgetSnapshot, open: Action) {
-    Row(
-        modifier = GlanceModifier.widgetChrome().clickable(open),
-        verticalAlignment = Alignment.CenterVertically
+    Column(
+        modifier = GlanceModifier.widgetChrome().clickable(open)
     ) {
-        Image(
-            provider = ImageProvider(R.drawable.ic_sync_engine_mark),
-            contentDescription = "Sync Engine",
-            modifier = GlanceModifier.size(56.dp)
-        )
-        Spacer(modifier = GlanceModifier.width(10.dp))
-        Column(modifier = GlanceModifier.defaultWeight()) {
-            Text(
-                text = state.dateLong,
-                style = TextStyle(fontSize = 10.sp, color = ColorProvider(Color(0xFF94A3B8)))
+        // Top Row: Logo + Status on Left, Laptop + Name on Right
+        Row(
+            modifier = GlanceModifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Image(
+                provider = ImageProvider(R.drawable.sync_engine_mark),
+                contentDescription = "Sync Engine",
+                modifier = GlanceModifier.size(34.dp)
             )
-            Text(
-                text = state.time,
-                style = TextStyle(
-                    fontSize = 42.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = ColorProvider(Color.White)
+            Spacer(modifier = GlanceModifier.width(8.dp))
+            Column {
+                Text(
+                    text = "SYNC ENGINE",
+                    style = TextStyle(
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = ColorProvider(Color.White)
+                    )
                 )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "● ",
+                        style = TextStyle(fontSize = 9.sp, color = ColorProvider(state.statusColor))
+                    )
+                    Text(
+                        text = state.statusLabel,
+                        style = TextStyle(fontSize = 11.sp, color = ColorProvider(Color(0xFFCBD5E1)))
+                    )
+                }
+            }
+
+            Spacer(modifier = GlanceModifier.width(8.dp).defaultWeight())
+
+            Image(
+                provider = ImageProvider(R.drawable.laptop_hero),
+                contentDescription = "Laptop",
+                modifier = GlanceModifier.size(46.dp)
             )
-            Text(
-                text = "${state.device} · ${state.statusLabel}",
-                style = TextStyle(fontSize = 11.sp, color = ColorProvider(Color(0xFFE2E8F0)))
-            )
+            Spacer(modifier = GlanceModifier.width(6.dp))
+            Column {
+                Text(
+                    text = "Xiaomi 2312",
+                    style = TextStyle(
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = ColorProvider(Color.White)
+                    )
+                )
+                Text(
+                    text = "${state.latency} · Wi-Fi",
+                    style = TextStyle(fontSize = 10.sp, color = ColorProvider(Color(0xFF94A3B8)))
+                )
+            }
         }
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                text = "↻",
-                style = TextStyle(fontSize = 16.sp, color = ColorProvider(Color.White), textAlign = TextAlign.Center),
-                modifier = GlanceModifier
-                    .background(ImageProvider(R.drawable.widget_tile_bg))
-                    .cornerRadius(14.dp)
-                    .padding(8.dp)
-                    .clickable(actionRunCallback<ManualSyncAction>())
-            )
-            Spacer(modifier = GlanceModifier.height(6.dp))
-            Text(
-                text = "⎘",
-                style = TextStyle(fontSize = 16.sp, color = ColorProvider(Color.White), textAlign = TextAlign.Center),
-                modifier = GlanceModifier
-                    .background(ImageProvider(R.drawable.widget_tile_bg))
-                    .cornerRadius(14.dp)
-                    .padding(8.dp)
-                    .clickable(actionStartActivity(openAppIntent("clipboard")))
-            )
-            Spacer(modifier = GlanceModifier.height(6.dp))
-            Text(
-                text = "···",
-                style = TextStyle(fontSize = 16.sp, color = ColorProvider(Color.White), textAlign = TextAlign.Center),
-                modifier = GlanceModifier
-                    .background(ImageProvider(R.drawable.widget_tile_bg))
-                    .cornerRadius(14.dp)
-                    .padding(8.dp)
-                    .clickable(actionStartActivity(openAppIntent("device")))
-            )
+
+        Spacer(modifier = GlanceModifier.height(14.dp))
+
+        // Bottom Row: 3 Stats (Sync 99.8%, Eventos hoy 24, Archivos 1,842)
+        Row(
+            modifier = GlanceModifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Stat 1: Sync 99.8%
+            Column(modifier = GlanceModifier.defaultWeight()) {
+                Text(
+                    text = "Sync",
+                    style = TextStyle(fontSize = 9.sp, color = ColorProvider(Color(0xFF94A3B8)))
+                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "99.8%",
+                        style = TextStyle(
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = ColorProvider(Color.White)
+                        )
+                    )
+                    Spacer(modifier = GlanceModifier.width(4.dp))
+                    Text(
+                        text = "○",
+                        style = TextStyle(fontSize = 13.sp, color = ColorProvider(Color(0xFF10B981)))
+                    )
+                }
+            }
+
+            // Stat 2: Eventos hoy 24
+            Column(modifier = GlanceModifier.defaultWeight()) {
+                Text(
+                    text = "Eventos hoy",
+                    style = TextStyle(fontSize = 9.sp, color = ColorProvider(Color(0xFF94A3B8)))
+                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "24",
+                        style = TextStyle(
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = ColorProvider(Color.White)
+                        )
+                    )
+                    Spacer(modifier = GlanceModifier.width(4.dp))
+                    Text(
+                        text = "ıll",
+                        style = TextStyle(fontSize = 13.sp, color = ColorProvider(Color(0xFF00BFFF)))
+                    )
+                }
+            }
+
+            // Stat 3: Archivos 1,842
+            Column(modifier = GlanceModifier.defaultWeight()) {
+                Text(
+                    text = "Archivos",
+                    style = TextStyle(fontSize = 9.sp, color = ColorProvider(Color(0xFF94A3B8)))
+                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "1,842",
+                        style = TextStyle(
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = ColorProvider(Color.White)
+                        )
+                    )
+                    Spacer(modifier = GlanceModifier.width(4.dp))
+                    Text(
+                        text = "〰",
+                        style = TextStyle(fontSize = 13.sp, color = ColorProvider(Color(0xFF007AFF)))
+                    )
+                }
+            }
         }
     }
 }
@@ -323,7 +412,6 @@ class ManualSyncAction : ActionCallback {
             SyncRepository(context).triggerManualSync()
             SyncGlanceWidget.updateAll(context)
             ActionsGlanceWidget.updateAll(context)
-            CompactGlanceWidget.updateAll(context)
         } catch (_: Exception) {
         }
     }

@@ -1,4 +1,4 @@
-﻿package com.example.syncapp
+package com.example.syncapp
 
 import android.app.Application
 import com.example.core.datastore.PreferencesManager
@@ -49,6 +49,9 @@ class SyncApp : Application() {
         // Connectivity trigger
         syncTrigger = SyncTrigger(this, repository, prefs)
         syncTrigger?.start()
+
+        // Auto-discover and connect on startup via Wi-Fi subnet probe
+        repository.autoDiscoverAndConnect()
     }
 
     override fun onTerminate() {
