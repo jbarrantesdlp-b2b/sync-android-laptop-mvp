@@ -2,86 +2,543 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SYNC ENGINE — By Barrantes Co.</title>
   <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div class="shell">
-    <header class="top">
-      <div class="brand">
-        <div class="mark">
-          <img src="assets/mark.png" width="36" height="36" alt="Sync Engine"/>
+  <div class="app-layout">
+    <!-- SIDEBAR (Dark Obsidian Aesthetic) -->
+    <aside class="sidebar">
+      <div class="sidebar-top">
+        <div class="brand-header">
+          <div class="brand-mark">
+            <img src="assets/mark.png" alt="Sync Engine Logo" width="34" height="34" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+            <div class="fallback-mark" style="display:none;">
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#00BFFF" stroke-width="2.5"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 4v4l3 3"/></svg>
+            </div>
+          </div>
+          <div class="brand-text">
+            <h1 class="brand-title">SYNC ENGINE</h1>
+            <p class="brand-tagline">Controlar. Conectar. Avanzar.</p>
+          </div>
         </div>
-        <div>
-          <h1>SYNC ENGINE</h1>
-          <p>BY BARRANTES CO. · Controlar. Conectar. Avanzar.</p>
-        </div>
-      </div>
-      <div id="status-pill" class="status-pill disconnected">
-        <span class="status-dot"></span>
-        <span id="status-text">Desconectado</span>
-      </div>
-    </header>
 
-    <section class="hero-widget">
-      <div class="clock-col">
-        <div class="mark big">
-          <img src="assets/mark.png" width="72" height="72" alt="Sync Engine"/>
-        </div>
-        <div>
-          <div id="live-date" class="date">Martes, 15 de septiembre</div>
-          <div id="live-clock" class="clock">9:41</div>
-        </div>
+        <nav class="sidebar-nav">
+          <a href="#" class="nav-item active" data-tab="inicio">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <span>Inicio</span>
+          </a>
+          <a href="#" class="nav-item" data-tab="dispositivos">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            <span>Dispositivos</span>
+          </a>
+          <a href="#" class="nav-item" data-tab="actividad">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            <span>Actividad</span>
+          </a>
+          <a href="#" class="nav-item" data-tab="archivos">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            <span>Archivos</span>
+          </a>
+          <a href="#" class="nav-item" data-tab="ia-assist">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.4 7.2L21 12l-6.6 2.8L12 22l-2.4-7.2L3 12l6.6-2.8z"/></svg>
+            <span>IA Assist</span>
+          </a>
+          <a href="#" class="nav-item" data-tab="automatizaciones">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><line x1="6" y1="9" x2="6" y2="21"/></svg>
+            <span>Automatizaciones</span>
+          </a>
+          <a href="#" class="nav-item" data-tab="ajustes" id="btn-open-settings">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <span>Ajustes</span>
+          </a>
+        </nav>
       </div>
-      <div class="device-col">
-        <div class="device-name" id="device-name">Buscando celular…</div>
-        <div class="device-meta"><span id="server-url">Cargando…</span></div>
-      </div>
-      <div class="hero-actions">
-        <button id="lock-btn" class="icon-btn" title="Bloquear PC">🔒</button>
-        <button id="send-clipboard-btn" class="icon-btn" title="Enviar al celular">⎘</button>
-        <button id="clear-log-btn" class="icon-btn" title="Limpiar log">↻</button>
-      </div>
-    </section>
 
-    <section class="iot-strip" id="iot-strip">
-      <div class="iot-head">
-        <h2>Sensores IoT</h2>
-        <span id="iot-source">Esperando telemetría del teléfono o ESP32…</span>
-      </div>
-      <div class="iot-tiles">
-        <div class="iot-tile"><div class="iot-value" id="iot-light">--</div><div class="iot-label">Luz</div></div>
-        <div class="iot-tile"><div class="iot-value" id="iot-accel">--</div><div class="iot-label">Movimiento</div></div>
-        <div class="iot-tile"><div class="iot-value" id="iot-prox">--</div><div class="iot-label">Proximidad</div></div>
-        <div class="iot-tile"><div class="iot-value" id="iot-batt">--</div><div class="iot-label">Batería</div></div>
-        <div class="iot-tile"><div class="iot-value" id="iot-steps">--</div><div class="iot-label">Pasos</div></div>
-        <div class="iot-tile"><div class="iot-value" id="iot-temp">--</div><div class="iot-label">Temp</div></div>
-        <div class="iot-tile"><div class="iot-value" id="iot-hum">--</div><div class="iot-label">Humedad</div></div>
-        <div class="iot-tile"><div class="iot-value" id="iot-press">--</div><div class="iot-label">Presión</div></div>
-        <div class="iot-tile wide"><div class="iot-value" id="iot-gps">--</div><div class="iot-label">GPS</div></div>
-      </div>
-    </section>
+      <div class="sidebar-bottom">
+        <div class="status-card" id="status-card-sidebar">
+          <div class="status-card-header">
+            <span class="status-indicator-dot online"></span>
+            <div class="status-card-info">
+              <span class="status-card-title">Sincronización activa</span>
+              <span class="status-card-subtitle" id="sidebar-status-sub">Todo en orden</span>
+            </div>
+          </div>
+          <button class="status-card-btn" id="btn-sidebar-details">Ver detalles →</button>
+        </div>
 
-    <div class="grid">
-      <div class="card">
-        <h2>Vinculación</h2>
-        <p class="hint">Escanea este QR con Sync Engine en el teléfono.</p>
-        <div class="qr-container">
+        <div class="sidebar-footer">
+          <div class="footer-brand">
+            <img src="assets/mark.png" alt="Icon" width="18" height="18">
+            <div>
+              <span class="footer-title">SYNC ENGINE v1.2</span>
+              <span class="footer-sub">Controlar. Conectar. Avanzar.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN DASHBOARD (Clean Modern Light Canvas with Rich Dark Hero) -->
+    <main class="main-dashboard">
+      <!-- TOPBAR -->
+      <header class="topbar">
+        <div class="welcome-col">
+          <span class="date-badge" id="live-full-date">JUEVES, 15 DE SEPTIEMBRE</span>
+          <h2 class="welcome-title">Buenos días, Jose.</h2>
+          <p class="welcome-desc">Todos tus dispositivos conectados y listos para avanzar.</p>
+        </div>
+
+        <div class="topbar-actions">
+          <div class="search-bar">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" placeholder="Buscar archivos, dispositivos, acciones..." id="global-search">
+            <kbd class="shortcut-pill">⌘ K</kbd>
+          </div>
+
+          <button class="icon-notification-btn" title="Notificaciones">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <span class="notif-badge"></span>
+          </button>
+
+          <div class="user-profile-capsule">
+            <img src="assets/avatar_jose.jpg" alt="Jose Barrantes" class="avatar-img" onerror="this.src='icon.png'">
+            <div class="user-text">
+              <span class="user-name">Jose Barrantes</span>
+              <span class="user-role">Pro User</span>
+            </div>
+            <svg class="chevron-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+
+          <div class="tagline-pill">
+            <span>Más control.</span>
+            <span>Más tiempo para lo importante.</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- ROW 1: HERO & KEY METRICS (Exact Match to Left Design) -->
+      <section class="metrics-grid">
+        <!-- HERO CARD: DISPOSITIVO ACTUAL -->
+        <div class="hero-device-card">
+          <div class="hero-left">
+            <div class="hero-meta-label">DISPOSITIVO ACTUAL</div>
+            <h3 class="hero-device-name" id="hero-hostname">Xiaomi 2312</h3>
+            <p class="hero-device-details">Windows 11 · Wi-Fi · <span id="hero-latency">12 ms</span> de latencia</p>
+            
+            <div class="hero-connection-status">
+              <span class="live-status-dot online"></span>
+              <span id="hero-status-label">Conectado</span>
+            </div>
+
+            <button class="hero-action-btn" id="btn-open-pairing">
+              <span>Ver detalles</span>
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </button>
+          </div>
+
+          <div class="hero-right">
+            <div class="laptop-glow-bg"></div>
+            <img src="assets/laptop_hero.jpg" alt="Laptop Xiaomi" class="hero-laptop-img">
+          </div>
+        </div>
+
+        <!-- STAT CARD 1: SALUD DE SINCRONIZACIÓN -->
+        <div class="stat-card">
+          <div class="stat-card-header">
+            <span class="stat-label">SALUD DE SINCRONIZACIÓN</span>
+          </div>
+          <div class="stat-body-with-chart">
+            <div class="stat-text-group">
+              <div class="stat-value">99.8%</div>
+              <div class="stat-sub">Uptime saludable</div>
+            </div>
+            <div class="stat-chart-container">
+              <svg class="circular-chart" viewBox="0 0 36 36">
+                <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#E2E8F0" stroke-width="3.2"/>
+                <path class="circle-val" stroke-dasharray="99.8, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#10B981" stroke-width="3.5" stroke-linecap="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="stat-footnote">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#10B981" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Última verificación: hace 2 min</span>
+          </div>
+        </div>
+
+        <!-- STAT CARD 2: ACTIVIDAD RECIENTE -->
+        <div class="stat-card">
+          <div class="stat-card-header">
+            <span class="stat-label">ACTIVIDAD RECIENTE</span>
+          </div>
+          <div class="stat-body-with-chart">
+            <div class="stat-text-group">
+              <div class="stat-value" id="stat-events-count">24</div>
+              <div class="stat-sub">eventos hoy</div>
+            </div>
+            <div class="stat-chart-container bars-chart">
+              <span class="chart-bar" style="height: 35%;"></span>
+              <span class="chart-bar" style="height: 55%;"></span>
+              <span class="chart-bar" style="height: 40%;"></span>
+              <span class="chart-bar" style="height: 70%;"></span>
+              <span class="chart-bar" style="height: 50%;"></span>
+              <span class="chart-bar" style="height: 85%;"></span>
+              <span class="chart-bar" style="height: 65%;"></span>
+              <span class="chart-bar active" style="height: 95%;"></span>
+            </div>
+          </div>
+          <div class="stat-footnote positive">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#10B981" stroke-width="2.5"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+            <span>+12% vs. ayer</span>
+          </div>
+        </div>
+
+        <!-- STAT CARD 3: ARCHIVOS SINCRONIZADOS -->
+        <div class="stat-card">
+          <div class="stat-card-header">
+            <span class="stat-label">ARCHIVOS SINCRONIZADOS</span>
+          </div>
+          <div class="stat-body-with-chart">
+            <div class="stat-text-group">
+              <div class="stat-value">1,842</div>
+              <div class="stat-sub">este mes</div>
+            </div>
+            <div class="stat-chart-container wave-chart">
+              <svg viewBox="0 0 100 45" width="80" height="38" fill="none">
+                <path d="M0 35 Q 20 30, 40 20 T 80 10 T 100 5 L 100 45 L 0 45 Z" fill="rgba(0, 122, 255, 0.12)"/>
+                <path d="M0 35 Q 20 30, 40 20 T 80 10 T 100 5" stroke="#007AFF" stroke-width="2.5" stroke-linecap="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="stat-footnote positive">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#10B981" stroke-width="2.5"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+            <span>+28% vs. mes anterior</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ROW 2: DISPOSITIVOS, ACCIONES RÁPIDAS & ACTIVIDAD -->
+      <section class="content-row">
+        <!-- COL 1: DISPOSITIVOS -->
+        <div class="panel-card devices-panel">
+          <div class="panel-header">
+            <h3 class="panel-title">Dispositivos</h3>
+            <a href="#" class="panel-link" id="link-ver-dispositivos">Ver todos →</a>
+          </div>
+
+          <div class="devices-list">
+            <!-- Xiaomi 2312 (This device) -->
+            <div class="device-item active-device">
+              <div class="device-icon-box laptop">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+              </div>
+              <div class="device-info">
+                <div class="device-name-row">
+                  <span class="device-status-dot online"></span>
+                  <strong class="device-item-name">Xiaomi 2312</strong>
+                </div>
+                <span class="device-item-meta">Windows 11 · Este dispositivo</span>
+              </div>
+              <div class="device-item-right">
+                <span class="badge-status-pill online">Conectado</span>
+                <span class="device-latency-txt">12 ms</span>
+                <button class="item-more-btn" title="Opciones">⋮</button>
+              </div>
+            </div>
+
+            <!-- Galaxy S24 (Phone) -->
+            <div class="device-item" id="device-galaxy-s24">
+              <div class="device-icon-box phone">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
+              </div>
+              <div class="device-info">
+                <div class="device-name-row">
+                  <span class="device-status-dot online" id="dot-phone"></span>
+                  <strong class="device-item-name" id="label-phone-name">Galaxy S24</strong>
+                </div>
+                <span class="device-item-meta">Android 14 · Móvil</span>
+              </div>
+              <div class="device-item-right">
+                <span class="badge-status-pill online" id="pill-phone-status">Conectado</span>
+                <span class="device-latency-txt" id="txt-phone-latency">28 ms</span>
+                <button class="item-more-btn" title="Opciones">⋮</button>
+              </div>
+            </div>
+
+            <!-- iPad Pro -->
+            <div class="device-item offline">
+              <div class="device-icon-box tablet">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
+              </div>
+              <div class="device-info">
+                <div class="device-name-row">
+                  <span class="device-status-dot offline"></span>
+                  <strong class="device-item-name">iPad Pro</strong>
+                </div>
+                <span class="device-item-meta">iPadOS 17</span>
+              </div>
+              <div class="device-item-right">
+                <span class="badge-status-pill offline">Sin conexión</span>
+                <span class="device-latency-txt">Hace 3 h</span>
+                <button class="item-more-btn" title="Opciones">⋮</button>
+              </div>
+            </div>
+
+            <!-- Oficina - Desktop -->
+            <div class="device-item">
+              <div class="device-icon-box desktop">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+              </div>
+              <div class="device-info">
+                <div class="device-name-row">
+                  <span class="device-status-dot online"></span>
+                  <strong class="device-item-name">Oficina - Desktop</strong>
+                </div>
+                <span class="device-item-meta">Windows 11</span>
+              </div>
+              <div class="device-item-right">
+                <span class="badge-status-pill online">Conectado</span>
+                <span class="device-latency-txt">16 ms</span>
+                <button class="item-more-btn" title="Opciones">⋮</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- COL 2: ACCIONES RÁPIDAS (2x2 Grid) -->
+        <div class="panel-card actions-panel">
+          <div class="panel-header">
+            <h3 class="panel-title">Acciones rápidas</h3>
+            <button class="panel-icon-action-btn" title="Personalizar" id="btn-add-action">+</button>
+          </div>
+
+          <div class="quick-actions-2x2">
+            <!-- Action 1: Enviar al portapapeles (Vibrant Blue Card) -->
+            <button class="action-tile-btn primary-blue" id="btn-action-clipboard">
+              <div class="action-tile-icon-wrap">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+              </div>
+              <div class="action-tile-text">
+                <strong class="action-tile-title">Enviar al portapapeles</strong>
+                <span class="action-tile-sub">Entre dispositivos</span>
+              </div>
+            </button>
+
+            <!-- Action 2: Sincronizar ahora (White Card) -->
+            <button class="action-tile-btn white-tile" id="btn-action-sync">
+              <div class="action-tile-icon-wrap">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#007AFF" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+              </div>
+              <div class="action-tile-text">
+                <strong class="action-tile-title">Sincronizar ahora</strong>
+                <span class="action-tile-sub">Archivos pendientes</span>
+              </div>
+            </button>
+
+            <!-- Action 3: Ask AI (White Card) -->
+            <button class="action-tile-btn white-tile" id="btn-action-ai">
+              <div class="action-tile-icon-wrap">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#7C3AED" stroke-width="2"><path d="M12 2l2.4 7.2L21 12l-6.6 2.8L12 22l-2.4-7.2L3 12l6.6-2.8z"/></svg>
+              </div>
+              <div class="action-tile-text">
+                <strong class="action-tile-title">Ask AI</strong>
+                <span class="action-tile-sub">Resumir / Analizar</span>
+              </div>
+            </button>
+
+            <!-- Action 4: Automatizaciones (White Card) -->
+            <button class="action-tile-btn white-tile" id="btn-action-rules">
+              <div class="action-tile-icon-wrap">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#0284C7" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+              </div>
+              <div class="action-tile-text">
+                <strong class="action-tile-title">Automatizaciones</strong>
+                <span class="action-tile-sub">Crear nueva regla</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- COL 3: ACTIVIDAD RECIENTE -->
+        <div class="panel-card activity-panel">
+          <div class="panel-header">
+            <h3 class="panel-title">Actividad reciente</h3>
+            <a href="#" class="panel-link" id="link-ver-actividad">Ver todo →</a>
+          </div>
+
+          <div class="activity-timeline" id="activity-timeline-container">
+            <div class="activity-row">
+              <div class="activity-icon-badge gray">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
+              </div>
+              <div class="activity-row-content">
+                <strong class="activity-row-title">Mensaje enviado al portapapeles</strong>
+                <span class="activity-row-meta">Xiaomi 2312 · hace 2 min</span>
+              </div>
+              <button class="item-more-btn">⋮</button>
+            </div>
+
+            <div class="activity-row">
+              <div class="activity-icon-badge purple">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.4 7.2L21 12l-6.6 2.8L12 22l-2.4-7.2L3 12l6.6-2.8z"/></svg>
+              </div>
+              <div class="activity-row-content">
+                <strong class="activity-row-title">Resumen generado con IA</strong>
+                <span class="activity-row-meta">Notas de reunión · hace 12 min</span>
+              </div>
+              <button class="item-more-btn">⋮</button>
+            </div>
+
+            <div class="activity-row">
+              <div class="activity-icon-badge green">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/></svg>
+              </div>
+              <div class="activity-row-content">
+                <strong class="activity-row-title">Dispositivo conectado</strong>
+                <span class="activity-row-meta">Galaxy S24 · hace 28 min</span>
+              </div>
+              <button class="item-more-btn">⋮</button>
+            </div>
+
+            <div class="activity-row">
+              <div class="activity-icon-badge blue">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              </div>
+              <div class="activity-row-content">
+                <strong class="activity-row-title">Archivo sincronizado</strong>
+                <span class="activity-row-meta">Presentación_v3.pptx · hace 1 h</span>
+              </div>
+              <button class="item-more-btn">⋮</button>
+            </div>
+
+            <div class="activity-row">
+              <div class="activity-icon-badge dark">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              </div>
+              <div class="activity-row-content">
+                <strong class="activity-row-title">Regla de automatización ejecutada</strong>
+                <span class="activity-row-meta">Backup diario · hace 3 h</span>
+              </div>
+              <button class="item-more-btn">⋮</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- BOTTOM FLOATING DOCK (Dark Obsidian Bar) -->
+      <footer class="bottom-dock-container">
+        <div class="dock-bar">
+          <!-- USAGE BREAKDOWN -->
+          <div class="dock-section usage-section">
+            <span class="dock-section-label">USO DE SINCRONIZACIÓN</span>
+            <div class="dock-stat-val">816 MB <span class="dock-stat-unit">este mes</span></div>
+            <div class="segmented-bar">
+              <span class="bar-seg docs" style="width: 42%;"></span>
+              <span class="bar-seg images" style="width: 28%;"></span>
+              <span class="bar-seg videos" style="width: 20%;"></span>
+              <span class="bar-seg others" style="width: 10%;"></span>
+            </div>
+            <div class="segmented-legend">
+              <span><span class="dot docs"></span> Documentos 42%</span>
+              <span><span class="dot images"></span> Imágenes 28%</span>
+              <span><span class="dot videos"></span> Videos 20%</span>
+              <span><span class="dot others"></span> Otros 10%</span>
+            </div>
+          </div>
+
+          <div class="dock-divider"></div>
+
+          <!-- PERFORMANCE EQUALIZER -->
+          <div class="dock-section performance-section">
+            <span class="dock-section-label">RENDIMIENTO</span>
+            <div class="dock-stat-val"><span id="dock-latency-num">12</span> ms <span class="dock-stat-unit">latencia promedio</span></div>
+            <div class="equalizer-bars">
+              <span class="eq-bar" style="height: 30%;"></span>
+              <span class="eq-bar" style="height: 45%;"></span>
+              <span class="eq-bar" style="height: 25%;"></span>
+              <span class="eq-bar" style="height: 60%;"></span>
+              <span class="eq-bar" style="height: 40%;"></span>
+              <span class="eq-bar" style="height: 75%;"></span>
+              <span class="eq-bar" style="height: 50%;"></span>
+              <span class="eq-bar" style="height: 90%;"></span>
+              <span class="eq-bar" style="height: 65%;"></span>
+              <span class="eq-bar" style="height: 40%;"></span>
+              <span class="eq-bar" style="height: 80%;"></span>
+              <span class="eq-bar" style="height: 55%;"></span>
+              <span class="eq-bar" style="height: 70%;"></span>
+              <span class="eq-bar" style="height: 35%;"></span>
+              <span class="eq-bar" style="height: 85%;"></span>
+              <span class="eq-bar" style="height: 50%;"></span>
+            </div>
+          </div>
+
+          <div class="dock-divider"></div>
+
+          <!-- SYSTEM HEALTH PILL BANNER -->
+          <div class="dock-section health-section" id="btn-dock-health">
+            <div class="health-pill-wrap">
+              <div class="health-pill-icon">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="#10B981"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              </div>
+              <div class="health-pill-text">
+                <strong>Todo en óptimas condiciones</strong>
+                <span>Sync Engine está funcionando correctamente.</span>
+              </div>
+              <svg class="health-arrow" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="legal-footer">
+          <a href="#">Privacidad</a>
+          <span class="sep">·</span>
+          <a href="#">Términos</a>
+          <span class="sep">·</span>
+          <a href="#">Soporte</a>
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <!-- PAIRING & CLIPBOARD MODAL (Accessible via 'Ver detalles' or Quick Actions) -->
+  <div class="modal-overlay" id="pairing-modal" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <h3>Vincular Dispositivo Móvil</h3>
+          <p>Escanea con la app móvil Sync Engine para enlazar sin escribir la IP.</p>
+        </div>
+        <button class="modal-close-btn" id="btn-close-modal">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="qr-preview-box">
           <canvas id="qr-canvas"></canvas>
+          <div class="server-url-badge">
+            <span class="live-dot-green"></span>
+            <code id="server-url-display">ws://192.168.1.53:8123</code>
+          </div>
         </div>
-      </div>
-      <div class="card">
-        <h2>Portapapeles hacia el celular</h2>
-        <div class="quick-actions">
-          <input type="text" id="clipboard-input" placeholder="Texto o URL para enviar…" />
-        </div>
-        <div class="terminal-box">
-          <div class="terminal-header">Registro en vivo</div>
-          <div id="log-content" class="log-content"></div>
+
+        <div class="modal-quick-send">
+          <h4>Enviar portapapeles a tu móvil ahora</h4>
+          <div class="quick-input-row">
+            <input type="text" id="clipboard-input" placeholder="Escribe un texto o pega un link para enviar..." />
+            <button id="send-clipboard-btn" class="send-btn">Enviar</button>
+          </div>
+          <div class="system-controls-row">
+            <button id="lock-btn" class="btn-tool">🔒 Bloquear PC</button>
+            <button id="clear-log-btn" class="btn-tool">↻ Limpiar historial</button>
+          </div>
         </div>
       </div>
     </div>
   </div>
+
   <script src="renderer.js"></script>
 </body>
 </html>
