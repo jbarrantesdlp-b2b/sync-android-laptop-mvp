@@ -75,6 +75,13 @@ ipcRenderer.on('server-info', (event, data) => {
   }
 });
 
+ipcRenderer.on('discovery-info', (_event, data) => {
+  const hint = document.getElementById('discovery-hint');
+  if (hint) {
+    hint.textContent = 'La laptop se anuncia sola. El telefono conecta por Wi-Fi o Bluetooth, sin QR.';
+  }
+});
+
 // Status & Telemetry Updates
 ipcRenderer.on('status-update', (event, data) => {
   const isConnected = data.status === 'CONNECTED';

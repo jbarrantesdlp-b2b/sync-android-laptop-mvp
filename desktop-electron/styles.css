@@ -1320,3 +1320,11 @@ html, body {
   background: #162238;
   color: #FFFFFF;
 }
+
+.discovery-pills { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0 12px; }
+.pill {
+  font-size: 11px; letter-spacing: 0.4px; font-weight: 700;
+  padding: 4px 10px; border-radius: 999px;
+  background: rgba(0, 191, 255, 0.1); color: #7DD3FC;
+  border: 1px solid rgba(0, 191, 255, 0.28);
+}

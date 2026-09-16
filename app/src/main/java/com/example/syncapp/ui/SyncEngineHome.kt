@@ -240,7 +240,7 @@ internal fun DevicePane(
         GlassCard(theme) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(serverUrl, color = Color(0xFF00BFFF), fontSize = 12.sp)
-                Text("Escanea el QR de la laptop en la pestana Actividad.", color = theme.textSecondary, fontSize = 12.sp)
+                Text("Se vincula sola: Wi-Fi o Bluetooth. El QR es solo respaldo.", color = theme.textSecondary, fontSize = 12.sp)
             }
         }
     }
