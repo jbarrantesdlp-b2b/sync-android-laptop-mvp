@@ -1,4 +1,4 @@
-﻿package com.example.core.datastore
+package com.example.core.datastore
 
 import android.content.Context
 import androidx.datastore.preferences.core.edit
@@ -18,10 +18,14 @@ class PreferencesManager(private val context: Context) {
         val KEY_FONT = stringPreferencesKey("font_family")
         val KEY_CONN = stringPreferencesKey("connection_status")
         val KEY_SERVER_URL = stringPreferencesKey("server_url")
+        val KEY_GEMINI_KEY = stringPreferencesKey("gemini_api_key")
     }
 
     val serverUrlFlow: Flow<String> = context.dataStore.data
         .map { prefs -> prefs[KEY_SERVER_URL] ?: "ws://10.0.2.2:8123" }
+
+    val geminiApiKeyFlow: Flow<String> = context.dataStore.data
+        .map { prefs -> prefs[KEY_GEMINI_KEY] ?: "" }
 
     val themePackFlow: Flow<ThemePack> = context.dataStore.data
         .map { prefs ->
@@ -49,5 +53,9 @@ class PreferencesManager(private val context: Context) {
 
     suspend fun setConnectionStatus(status: String) = withContext(Dispatchers.IO) {
         context.dataStore.edit { prefs -> prefs[KEY_CONN] = status }
+    }
+
+    suspend fun setGeminiApiKey(key: String) = withContext(Dispatchers.IO) {
+        context.dataStore.edit { prefs -> prefs[KEY_GEMINI_KEY] = key }
     }
 }

@@ -18,9 +18,20 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
+import android.content.BroadcastReceiver
+import android.content.Intent
+import android.content.IntentFilter
+
 class WidgetUpdateObserver(private val context: Context) {
     private val prefs = PreferencesManager(context)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    private val timeTickReceiver = object : BroadcastReceiver() {
+        override fun onReceive(c: Context?, intent: Intent?) {
+            refreshAll()
+        }
+    }
+    private var isReceiverRegistered = false
 
     fun startObserving() {
         scope.launch {
@@ -33,11 +44,28 @@ class WidgetUpdateObserver(private val context: Context) {
                 refreshAll()
             }
         }
+
+        try {
+            val filter = IntentFilter().apply {
+                addAction(Intent.ACTION_TIME_TICK)
+                addAction(Intent.ACTION_TIME_CHANGED)
+                addAction(Intent.ACTION_TIMEZONE_CHANGED)
+            }
+            context.registerReceiver(timeTickReceiver, filter)
+            isReceiverRegistered = true
+        } catch (_: Exception) {}
+
         schedulePeriodicWidgetUpdates()
     }
 
     fun stopObserving() {
         scope.cancel()
+        if (isReceiverRegistered) {
+            try {
+                context.unregisterReceiver(timeTickReceiver)
+                isReceiverRegistered = false
+            } catch (_: Exception) {}
+        }
     }
 
     private fun refreshAll() {
