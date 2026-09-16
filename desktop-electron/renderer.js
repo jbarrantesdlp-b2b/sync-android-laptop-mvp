@@ -32,6 +32,14 @@ ipcRenderer.on('server-info', (event, data) => {
     if (error) console.error('Error al generar QR en Canvas:', error);
   });
   appendLog('info', `Servidor activo en: ${data.url}`);
+  appendLog('info', 'Anuncio automatico: Wi-Fi UDP + mDNS + Bluetooth LE');
+});
+
+ipcRenderer.on('discovery-info', (_event, data) => {
+  const hint = document.getElementById('discovery-hint');
+  if (hint) {
+    hint.textContent = 'La laptop se anuncia sola. El telefono conecta por Wi-Fi o Bluetooth, sin QR.';
+  }
 });
 
 ipcRenderer.on('status-update', (event, data) => {

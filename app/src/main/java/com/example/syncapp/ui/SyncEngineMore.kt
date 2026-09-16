@@ -1,6 +1,10 @@
 package com.example.syncapp.ui
 
+import android.Manifest
+import android.os.Build
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,9 +24,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AutoAwesome
+import androidx.compose.material.icons.outlined.Bluetooth
 import androidx.compose.material.icons.outlined.NorthEast
 import androidx.compose.material.icons.outlined.QrCodeScanner
 import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -32,6 +38,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -57,11 +64,25 @@ internal fun ActivityPane(theme: ThemePack, logs: List<String>) {
     val repository = syncApp.repository
     var url by remember { mutableStateOf("") }
     var showQr by remember { mutableStateOf(false) }
+    var showManual by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    val discoverStatus by syncApp.discovery.status.collectAsState()
+    val discovered by syncApp.discovery.peer.collectAsState()
 
-    LaunchedEffect(Unit) {
-        prefs.serverUrlFlow.collect { url = it }
+    val blePerms = remember {
+        if (Build.VERSION.SDK_INT >= 31) {
+            arrayOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT)
+        } else {
+            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
     }
+    val permLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { granted ->
+        if (granted.values.any { it }) syncApp.restartDiscovery()
+    }
+    LaunchedEffect(Unit) { permLauncher.launch(blePerms) }
+    LaunchedEffect(Unit) { prefs.serverUrlFlow.collect { url = it } }
 
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
@@ -70,37 +91,80 @@ internal fun ActivityPane(theme: ThemePack, logs: List<String>) {
         Text("Actividad", color = theme.textPrimary, fontSize = 24.sp, fontWeight = FontWeight.Bold)
         GlassCard(theme) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("VINCULACION", color = theme.textSecondary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                OutlinedTextField(
-                    value = url,
-                    onValueChange = { url = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    label = { Text("ws://IP:8123", fontSize = 12.sp) },
-                    colors = fieldColors(theme),
-                    shape = RoundedCornerShape(14.dp)
+                Text("ENLACE AUTOMATICO", color = theme.textSecondary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    discoverStatus,
+                    color = Color(0xFF00BFFF),
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    discovered?.let { "${it.name} · ${it.via} · ${it.url}" }
+                        ?: "Wi-Fi (UDP + mDNS) y Bluetooth LE. El QR ya no hace falta.",
+                    color = theme.textSecondary,
+                    fontSize = 12.sp
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(
-                        onClick = { showQr = true },
+                        onClick = {
+                            permLauncher.launch(blePerms)
+                            syncApp.restartDiscovery()
+                            Toast.makeText(context, "Buscando laptop…", Toast.LENGTH_SHORT).show()
+                        },
                         modifier = Modifier.weight(1f).height(46.dp),
                         shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00BFFF), contentColor = Color(0xFF021018))
                     ) {
-                        Icon(Icons.Outlined.QrCodeScanner, null, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Outlined.Search, null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(6.dp))
-                        Text("QR", fontWeight = FontWeight.Bold)
+                        Text("Buscar", fontWeight = FontWeight.Bold)
                     }
                     Button(
-                        onClick = {
-                            scope.launch { prefs.setServerUrl(url) }
-                            repository.connectToServer(url)
-                            Toast.makeText(context, "Conectando...", Toast.LENGTH_SHORT).show()
-                        },
+                        onClick = { permLauncher.launch(blePerms); syncApp.restartDiscovery() },
                         modifier = Modifier.weight(1f).height(46.dp),
                         shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = theme.surfaceAlt, contentColor = theme.textPrimary)
-                    ) { Text("Conectar", fontWeight = FontWeight.Bold) }
+                    ) {
+                        Icon(Icons.Outlined.Bluetooth, null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text("Bluetooth", fontWeight = FontWeight.Bold)
+                    }
+                }
+                TextButton(onClick = { showManual = !showManual }) {
+                    Text(if (showManual) "Ocultar manual" else "Manual / QR (respaldo)", color = theme.textSecondary, fontSize = 12.sp)
+                }
+                if (showManual) {
+                    OutlinedTextField(
+                        value = url,
+                        onValueChange = { url = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        label = { Text("ws://IP:8123", fontSize = 12.sp) },
+                        colors = fieldColors(theme),
+                        shape = RoundedCornerShape(14.dp)
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(
+                            onClick = { showQr = true },
+                            modifier = Modifier.weight(1f).height(44.dp),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = theme.surfaceAlt, contentColor = theme.textPrimary)
+                        ) {
+                            Icon(Icons.Outlined.QrCodeScanner, null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("QR")
+                        }
+                        Button(
+                            onClick = {
+                                scope.launch { prefs.setServerUrl(url) }
+                                repository.connectToServer(url)
+                                Toast.makeText(context, "Conectando...", Toast.LENGTH_SHORT).show()
+                            },
+                            modifier = Modifier.weight(1f).height(44.dp),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = theme.surfaceAlt, contentColor = theme.textPrimary)
+                        ) { Text("Conectar") }
+                    }
                 }
                 Text("Tema", color = theme.textSecondary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

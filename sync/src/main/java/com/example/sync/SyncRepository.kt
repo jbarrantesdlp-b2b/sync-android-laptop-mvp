@@ -35,6 +35,16 @@ class SyncRepository(
     companion object {
         const val DEFAULT_URL = "ws://10.0.2.2:8123"
         private val LIVE_TYPES = setOf("IOT_TELEMETRY", "HARDWARE_TELEMETRY", "PING", "PONG")
+
+        fun normalizeWsUrl(raw: String): String {
+            var u = raw.trim()
+            if (u.startsWith("http://", ignoreCase = true)) u = "ws://" + u.substring(7)
+            if (u.startsWith("https://", ignoreCase = true)) u = "wss://" + u.substring(8)
+            if (!u.startsWith("ws://", ignoreCase = true) && !u.startsWith("wss://", ignoreCase = true)) {
+                u = "ws://$u"
+            }
+            return u.trimEnd('/')
+        }
     }
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -95,10 +105,11 @@ class SyncRepository(
     }
 
     fun connectToServer(url: String = serverUrl) {
-        if (this.serverUrl != url || !socketClient.isOnline()) {
+        val clean = normalizeWsUrl(url)
+        if (this.serverUrl != clean || !socketClient.isOnline()) {
             socketClient.close()
-            this.serverUrl = url
-            socketClient = createSocketClient(url)
+            this.serverUrl = clean
+            socketClient = createSocketClient(clean)
         }
         socketClient.connect()
     }

@@ -5,6 +5,7 @@ const WebSocket = require('ws');
 const { exec } = require('child_process');
 const os = require('os');
 const qrcode = require('qrcode-terminal');
+const { startDiscovery } = require('./discovery');
 
 const PORT = 8123;
 const LIVE_TYPES = new Set(['IOT_TELEMETRY', 'HARDWARE_TELEMETRY', 'PING', 'PONG', 'CONNECTION_STATE', 'COMMAND_ACK']);
@@ -14,6 +15,7 @@ let server = null;
 let wss = null;
 const clients = new Set();
 let telemetryInterval = null;
+let stopDiscovery = null;
 
 function getAllLocalIps() {
   const ips = [];
@@ -350,6 +352,21 @@ function startServer() {
     try {
       qrcode.generate(wsUrl, { small: true });
     } catch (_e) {}
+    stopDiscovery = startDiscovery({
+      getIp: getPrimaryLocalIp,
+      port: PORT,
+      onLog: (msg) => {
+        console.log('[Sync Engine]', msg);
+        if (mainWindow) mainWindow.webContents.send('log-message', { type: 'info', message: msg });
+      }
+    });
+    if (mainWindow) {
+      mainWindow.webContents.send('discovery-info', {
+        udp: true,
+        mdns: true,
+        ble: process.platform === 'win32'
+      });
+    }
   });
 
   startTelemetryBroadcaster();
@@ -458,6 +475,10 @@ app.whenReady().then(() => {
   createWindow();
   createTray();
   startServer();
+});
+
+app.on('before-quit', () => {
+  try { if (stopDiscovery) stopDiscovery(); } catch (_e) {}
 });
 
 app.on('window-all-closed', () => {

@@ -510,7 +510,12 @@
       <div class="modal-header">
         <div class="modal-title-group">
           <h3>Vincular Dispositivo Móvil</h3>
-          <p>Escanea con la app móvil Sync Engine para enlazar sin escribir la IP.</p>
+          <p id="discovery-hint">Enlace automático: Wi-Fi (UDP + mDNS) y Bluetooth LE. El teléfono conecta solo. QR de respaldo abajo.</p>
+          <div class="discovery-pills">
+            <span class="pill">Wi-Fi UDP</span>
+            <span class="pill">mDNS</span>
+            <span class="pill">Bluetooth LE</span>
+          </div>
         </div>
         <button class="modal-close-btn" id="btn-close-modal">✕</button>
       </div>
