@@ -99,6 +99,16 @@ internal data class WidgetSnapshot(
             "CONNECTING" -> Color(0xFFF59E0B)
             else -> Color(0xFFEF4444)
         }
+    val healthPct: String
+        get() = when (status) {
+            "CONNECTED" -> "99.8%"
+            "CONNECTING" -> "68%"
+            else -> "--"
+        }
+    val filesLabel: String
+        get() = if (synced <= 0) "—" else "%,d".format(synced)
+    val eventsLabel: String
+        get() = (pending + synced).coerceAtMost(99).toString()
 
     companion object {
         suspend fun load(context: Context): WidgetSnapshot {
@@ -226,6 +236,14 @@ private fun MediumStatus(state: WidgetSnapshot, open: Action) {
                         color = ColorProvider(Color.White)
                     )
                 )
+                Text(
+                    text = "BARRANTES CO.",
+                    style = TextStyle(
+                        fontSize = 8.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = ColorProvider(Color(0xFF00BFFF))
+                    )
+                )
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = "● ",
@@ -287,6 +305,14 @@ private fun LargeHero(state: WidgetSnapshot, open: Action) {
                         color = ColorProvider(Color.White)
                     )
                 )
+                Text(
+                    text = "BARRANTES CO.",
+                    style = TextStyle(
+                        fontSize = 8.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = ColorProvider(Color(0xFF00BFFF))
+                    )
+                )
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = "● ",
@@ -309,7 +335,7 @@ private fun LargeHero(state: WidgetSnapshot, open: Action) {
             Spacer(modifier = GlanceModifier.width(6.dp))
             Column {
                 Text(
-                    text = "Xiaomi 2312",
+                    text = state.device,
                     style = TextStyle(
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
@@ -338,7 +364,7 @@ private fun LargeHero(state: WidgetSnapshot, open: Action) {
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = "99.8%",
+                        text = state.healthPct,
                         style = TextStyle(
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
@@ -361,7 +387,7 @@ private fun LargeHero(state: WidgetSnapshot, open: Action) {
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = "24",
+                        text = state.eventsLabel,
                         style = TextStyle(
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
@@ -384,7 +410,7 @@ private fun LargeHero(state: WidgetSnapshot, open: Action) {
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = "1,842",
+                        text = state.filesLabel,
                         style = TextStyle(
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,

@@ -64,6 +64,7 @@ import com.example.syncapp.BrandWallpaper
 import com.example.syncapp.R
 import com.example.syncapp.ui.brand.SyncEngineLockup
 import com.example.syncapp.ui.brand.SyncEngineMark
+import com.example.syncwidget.WidgetPinner
 import java.util.Calendar
 
 @Composable
@@ -283,7 +284,47 @@ internal fun DevicePane(
                 }
             }
         }
+        Text("Widgets Android", color = theme.textSecondary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+        GlassCard(theme) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    "Añádelos al escritorio: estado 4×2, acciones 2×2 y reloj 1×1. El launcher te pide dónde colocarlos.",
+                    color = theme.textSecondary,
+                    fontSize = 12.sp
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(
+                        onClick = { pinWidget(context, WidgetPinner.Kind.Status) },
+                        modifier = Modifier.weight(1f).height(44.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00BFFF), contentColor = Color(0xFF021018))
+                    ) { Text("Estado", fontWeight = FontWeight.Bold, fontSize = 12.sp) }
+                    Button(
+                        onClick = { pinWidget(context, WidgetPinner.Kind.Actions) },
+                        modifier = Modifier.weight(1f).height(44.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = theme.surfaceAlt, contentColor = theme.textPrimary)
+                    ) { Text("Acciones", fontWeight = FontWeight.Bold, fontSize = 12.sp) }
+                    Button(
+                        onClick = { pinWidget(context, WidgetPinner.Kind.Compact) },
+                        modifier = Modifier.weight(1f).height(44.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = theme.surfaceAlt, contentColor = theme.textPrimary)
+                    ) { Text("1×1", fontWeight = FontWeight.Bold, fontSize = 12.sp) }
+                }
+            }
+        }
     }
+}
+
+private fun pinWidget(context: android.content.Context, kind: WidgetPinner.Kind) {
+    val ok = WidgetPinner.pin(context, kind)
+    val msg = if (ok) {
+        "Elige dónde colocar el widget"
+    } else {
+        "Mantén pulsado el escritorio → Widgets → Sync Engine"
+    }
+    Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
 }
 
 @Composable
