@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="widget_description">Reloj, estado de Sync Engine y acciones rápidas (2×2 o 4×2)</string>
-    <string name="widget_actions_description">Accesos rápidos: Sync, Enviar, Bloquear, IA</string>
-    <string name="widget_compact_description">Reloj Sync Engine compacto 1×1</string>
+    <string name="widget_description">Reloj, estado Sync Engine y Barrantes Co. (2×2 o 4×2)</string>
+    <string name="widget_actions_description">Accesos: Sync, Enviar, Bloquear PC, IA</string>
+    <string name="widget_compact_description">Reloj Sync Engine 1×1 con mark oficial</string>
 </resources>

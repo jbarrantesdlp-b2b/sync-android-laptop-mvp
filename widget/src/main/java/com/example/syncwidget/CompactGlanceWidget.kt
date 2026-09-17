@@ -47,7 +47,7 @@ object CompactGlanceWidget : GlanceAppWidget() {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Image(
-                    provider = ImageProvider(R.drawable.ic_sync_engine_mark),
+                    provider = ImageProvider(R.drawable.sync_engine_mark),
                     contentDescription = "Sync Engine",
                     modifier = GlanceModifier.size(20.dp)
                 )

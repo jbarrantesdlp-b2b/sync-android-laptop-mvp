@@ -10,5 +10,6 @@
     android:maxResizeHeight="220dp"
     android:updatePeriodMillis="1800000"
     android:description="@string/widget_description"
+    android:previewImage="@drawable/sync_engine_mark"
     android:resizeMode="horizontal|vertical"
-    android:widgetCategory="home_screen" />
+    android:widgetCategory="home_screen|keyguard" />
