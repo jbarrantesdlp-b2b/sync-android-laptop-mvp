@@ -1,6 +1,8 @@
 package com.example.syncapp.ui
 
+import android.app.WallpaperManager
 import android.os.Build
+import android.widget.Toast
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
@@ -53,10 +55,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.core.model.ThemePack
+import com.example.syncapp.BrandWallpaper
+import com.example.syncapp.R
 import com.example.syncapp.ui.brand.SyncEngineLockup
 import com.example.syncapp.ui.brand.SyncEngineMark
 import java.util.Calendar
@@ -203,6 +208,7 @@ internal fun DevicePane(
     onAbort: () -> Unit
 ) {
     val connected = status == "CONNECTED"
+    val context = LocalContext.current
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -241,6 +247,40 @@ internal fun DevicePane(
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(serverUrl, color = Color(0xFF00BFFF), fontSize = 12.sp)
                 Text("Se vincula sola: Wi-Fi o Bluetooth. El QR es solo respaldo.", color = theme.textSecondary, fontSize = 12.sp)
+            }
+        }
+        Text("Fondos Barrantes Co.", color = theme.textSecondary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+        GlassCard(theme) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("Pantalla de bloqueo e inicio OLED con el logo oficial.", color = theme.textSecondary, fontSize = 12.sp)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(
+                        onClick = {
+                            val ok = BrandWallpaper.apply(
+                                context,
+                                R.drawable.wallpaper_lock_barrantes,
+                                WallpaperManager.FLAG_LOCK
+                            )
+                            Toast.makeText(context, if (ok) "Bloqueo aplicado" else "No se pudo aplicar", Toast.LENGTH_SHORT).show()
+                        },
+                        modifier = Modifier.weight(1f).height(44.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00BFFF), contentColor = Color(0xFF021018))
+                    ) { Text("Bloqueo", fontWeight = FontWeight.Bold, fontSize = 12.sp) }
+                    Button(
+                        onClick = {
+                            val ok = BrandWallpaper.apply(
+                                context,
+                                R.drawable.wallpaper_home_barrantes,
+                                WallpaperManager.FLAG_SYSTEM
+                            )
+                            Toast.makeText(context, if (ok) "Inicio aplicado" else "No se pudo aplicar", Toast.LENGTH_SHORT).show()
+                        },
+                        modifier = Modifier.weight(1f).height(44.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = theme.surfaceAlt, contentColor = theme.textPrimary)
+                    ) { Text("Inicio", fontWeight = FontWeight.Bold, fontSize = 12.sp) }
+                }
             }
         }
     }
