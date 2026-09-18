@@ -8,10 +8,15 @@ import com.example.data.SyncStatus
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.json.JSONArray
+import org.json.JSONObject
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -33,7 +38,7 @@ class SyncRepository(
     constructor(context: Context) : this(context, PreferencesManager(context), DEFAULT_URL)
 
     companion object {
-        const val DEFAULT_URL = "ws://10.0.2.2:8123"
+        const val DEFAULT_URL = "ws://192.168.1.49:8123"
         private val LIVE_TYPES = setOf("IOT_TELEMETRY", "HARDWARE_TELEMETRY", "PING", "PONG")
 
         fun normalizeWsUrl(raw: String): String {
@@ -102,6 +107,96 @@ class SyncRepository(
 
     fun startSync() {
         socketClient.connect()
+    }
+
+    fun autoDiscoverAndConnect(onConnected: ((String) -> Unit)? = null) {
+        scope.launch {
+            // 1. Probar primero la URL guardada si no es el placeholder del emulador
+            val savedUrl = try {
+                effectivePrefs?.serverUrlFlow?.first()
+            } catch (_: Exception) {
+                null
+            } ?: serverUrl
+
+            if (savedUrl.isNotBlank()) {
+                connectToServer(savedUrl)
+                delay(800)
+                if (isConnected()) {
+                    onConnected?.invoke(savedUrl)
+                    return@launch
+                }
+            }
+
+            // 2. Escanear automáticamente la subred Wi-Fi local en busca de Sync Engine (puerto 8123)
+            val discoveredIp = scanSubnetForSyncEngine()
+            if (discoveredIp != null) {
+                val fullUrl = "ws://$discoveredIp:8123"
+                effectivePrefs?.setServerUrl(fullUrl)
+                connectToServer(fullUrl)
+                onConnected?.invoke(fullUrl)
+            } else if (!isConnected()) {
+                connectToServer(DEFAULT_URL)
+            }
+        }
+    }
+
+    private fun getLocalWifiIp(): String? {
+        try {
+            val interfaces = java.net.NetworkInterface.getNetworkInterfaces()
+            while (interfaces.hasMoreElements()) {
+                val intf = interfaces.nextElement()
+                val addrs = intf.inetAddresses
+                while (addrs.hasMoreElements()) {
+                    val addr = addrs.nextElement()
+                    if (!addr.isLoopbackAddress && addr is java.net.Inet4Address) {
+                        val host = addr.hostAddress ?: continue
+                        if (host.startsWith("192.168.") || host.startsWith("10.") || host.startsWith("172.")) {
+                            return host
+                        }
+                    }
+                }
+            }
+        } catch (_: Exception) {}
+        return null
+    }
+
+    private suspend fun scanSubnetForSyncEngine(): String? = kotlinx.coroutines.withContext(Dispatchers.IO) {
+        val myIp = getLocalWifiIp() ?: return@withContext null
+        val prefix = myIp.substringBeforeLast(".")
+
+        val probeClient = OkHttpClient.Builder()
+            .connectTimeout(450, TimeUnit.MILLISECONDS)
+            .readTimeout(450, TimeUnit.MILLISECONDS)
+            .build()
+
+        val foundIp = kotlinx.coroutines.CompletableDeferred<String?>()
+
+        val jobs = (1..254).map { i ->
+            launch {
+                if (foundIp.isCompleted) return@launch
+                val targetIp = "$prefix.$i"
+                try {
+                    val req = Request.Builder()
+                        .url("http://$targetIp:8123/status")
+                        .build()
+                    probeClient.newCall(req).execute().use { resp ->
+                        if (resp.isSuccessful) {
+                            val body = resp.body?.string() ?: ""
+                            if (body.contains("Sync Engine") || body.contains("CONNECTED") || body.contains("hostName")) {
+                                foundIp.complete(targetIp)
+                            }
+                        }
+                    }
+                } catch (_: Exception) {}
+            }
+        }
+
+        kotlinx.coroutines.withTimeoutOrNull(2200) {
+            foundIp.await()
+        } ?: run {
+            jobs.forEach { it.cancel() }
+            null
+        }
     }
 
     fun connectToServer(url: String = serverUrl) {
@@ -267,4 +362,106 @@ class SyncRepository(
     fun disconnect() {
         stopSync()
     }
+
+    fun saveNoteToLaptop(text: String): Boolean {
+        val cleanText = text.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n")
+        return sendMessage("SAVE_NOTE", "{\"text\":\"$cleanText\"}")
+    }
+
+    fun openDownloadsOnPc(): Boolean {
+        return sendMessage("OPEN_DOWNLOADS", "{}")
+    }
+
+    fun openNotepadOnPc(): Boolean {
+        return sendMessage("OPEN_NOTEPAD", "{}")
+    }
+
+    fun openExplorerOnPc(path: String = ""): Boolean {
+        val cleanPath = path.replace("\\", "\\\\").replace("\"", "\\\"")
+        return sendMessage("OPEN_EXPLORER", "{\"path\":\"$cleanPath\"}")
+    }
+
+    suspend fun fetchRemoteDirectory(path: String = ""): RemoteDirResponse? = withContext(Dispatchers.IO) {
+        try {
+            val httpUrl = serverUrl.replace("ws://", "http://").replace("wss://", "https://") +
+                "/api/fs/list?path=" + java.net.URLEncoder.encode(path, "UTF-8")
+            val request = Request.Builder().url(httpUrl).get().build()
+            val response = httpClient.newCall(request).execute()
+            if (response.isSuccessful) {
+                val body = response.body?.string() ?: return@withContext null
+                val obj = JSONObject(body)
+                val currentPath = obj.optString("currentPath")
+                val parentPath = obj.optString("parentPath")
+                val homeDir = obj.optString("homeDir")
+                val arr = obj.optJSONArray("items") ?: JSONArray()
+                val list = mutableListOf<RemoteFileItem>()
+                for (i in 0 until arr.length()) {
+                    val it = arr.getJSONObject(i)
+                    list.add(
+                        RemoteFileItem(
+                            name = it.optString("name"),
+                            path = it.optString("path"),
+                            isDirectory = it.optBoolean("isDirectory"),
+                            sizeBytes = it.optLong("sizeBytes"),
+                            modifiedAt = it.optLong("modifiedAt")
+                        )
+                    )
+                }
+                return@withContext RemoteDirResponse(currentPath, parentPath, homeDir, list)
+            }
+            null
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    suspend fun downloadRemoteFile(remotePath: String, destFile: java.io.File): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val httpUrl = serverUrl.replace("ws://", "http://").replace("wss://", "https://") +
+                "/api/fs/download?path=" + java.net.URLEncoder.encode(remotePath, "UTF-8")
+            val request = Request.Builder().url(httpUrl).get().build()
+            val response = httpClient.newCall(request).execute()
+            if (response.isSuccessful) {
+                response.body?.byteStream()?.use { input ->
+                    destFile.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                return@withContext true
+            }
+            false
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    suspend fun uploadFileToLaptop(fileName: String, fileBytes: ByteArray, targetFolder: String = ""): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val httpUrl = serverUrl.replace("ws://", "http://").replace("wss://", "https://") +
+                "/api/fs/upload?name=" + java.net.URLEncoder.encode(fileName, "UTF-8") +
+                "&folder=" + java.net.URLEncoder.encode(targetFolder, "UTF-8")
+            val mediaType = "application/octet-stream".toMediaTypeOrNull()
+            val body = fileBytes.toRequestBody(mediaType)
+            val request = Request.Builder().url(httpUrl).post(body).build()
+            val response = httpClient.newCall(request).execute()
+            response.isSuccessful
+        } catch (_: Exception) {
+            false
+        }
+    }
 }
+
+data class RemoteFileItem(
+    val name: String,
+    val path: String,
+    val isDirectory: Boolean,
+    val sizeBytes: Long,
+    val modifiedAt: Long
+)
+
+data class RemoteDirResponse(
+    val currentPath: String,
+    val parentPath: String,
+    val homeDir: String,
+    val items: List<RemoteFileItem>
+)

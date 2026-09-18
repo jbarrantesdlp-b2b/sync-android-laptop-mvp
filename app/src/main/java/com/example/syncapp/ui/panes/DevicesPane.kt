@@ -1,355 +1,386 @@
 package com.example.syncapp.ui.panes
 
+import android.content.Context
+import android.net.Uri
 import android.os.Build
-import androidx.compose.animation.AnimatedVisibility
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Cancel
-import androidx.compose.material.icons.outlined.Computer
-import androidx.compose.material.icons.outlined.KeyboardArrowRight
-import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material.icons.outlined.NavigateBefore
-import androidx.compose.material.icons.outlined.NavigateNext
-import androidx.compose.material.icons.outlined.PlayArrow
-import androidx.compose.material.icons.outlined.PowerSettingsNew
-import androidx.compose.material.icons.outlined.Refresh
-import androidx.compose.material.icons.outlined.Sensors
-import androidx.compose.material.icons.outlined.Speed
-import androidx.compose.material.icons.outlined.Tune
-import androidx.compose.material.icons.outlined.VolumeDown
-import androidx.compose.material.icons.outlined.VolumeMute
-import androidx.compose.material.icons.outlined.VolumeUp
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.outlined.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.syncapp.iot.IotSnapshot
-import com.example.syncapp.ui.components.ControlButton
-import com.example.syncapp.ui.components.DeviceCard
-import com.example.syncapp.ui.components.SectionHeader
-import com.example.syncapp.ui.components.StatusBadge
-import com.example.syncapp.ui.theme.DesignTokens
+import com.example.sync.SyncRepository
+import com.example.syncapp.R
+import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DevicesPane(
     status: String,
-    serverUrl: String,
-    latencyMs: Long?,
-    remoteNodeLabel: String?,
-    iotSnapshot: IotSnapshot,
-    isStreamingIot: Boolean,
-    onToggleStreamIot: () -> Unit,
-    onLock: () -> Unit,
-    onVolumeUp: () -> Unit,
-    onVolumeDown: () -> Unit,
-    onVolumeMute: () -> Unit,
-    onMediaPlayPause: () -> Unit,
-    onPresentationNext: () -> Unit,
-    onPresentationPrev: () -> Unit,
-    onPing: () -> Unit,
-    onPower: () -> Unit,
-    onReboot: () -> Unit,
-    onAbort: () -> Unit,
+    repository: SyncRepository,
+    onBack: () -> Unit = {},
+    onNavigateTab: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val isConnected = status == "CONNECTED"
-    var showSensorsDetail by remember { mutableStateOf(false) }
 
-    Column(
+    val bgDark = Color(0xFF050811)
+    val textWhite = Color(0xFFFFFFFF)
+    val textMuted = Color(0xFF94A3B8)
+    val textCyan = Color(0xFF00BFFF)
+    val cardBg = Color(0xFF0D1527)
+    val cardBorder = Color(0x3300BFFF)
+    val activeBlue = Color(0xFF007AFF)
+
+    var selectedSegment by remember { mutableStateOf("Control") }
+
+    val filePicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            scope.launch {
+                try {
+                    val name = uri.lastPathSegment?.substringAfterLast('/') ?: "archivo"
+                    context.contentResolver.openInputStream(uri)?.use { stream ->
+                        repository.uploadFileToLaptop(name, stream.readBytes())
+                        Toast.makeText(context, "Enviando $name...", Toast.LENGTH_SHORT).show()
+                    }
+                } catch (e: Exception) {
+                    Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    Box(
         modifier = modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(18.dp)
+            .background(bgDark)
     ) {
-        // Section title
-        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text("Dispositivos", color = DesignTokens.TextPrimary, fontSize = 24.sp, fontWeight = FontWeight.Bold)
-            Text("Nodos conectados en la red local Sync Engine.", color = DesignTokens.TextSecondary, fontSize = 13.sp)
-        }
-
-        // 1. Device List: Real available nodes
-        SectionHeader(title = "Nodos en la Red")
-
-        // Laptop / PC (Remote Node)
-        DeviceCard(
-            name = "Laptop Windows",
-            type = "laptop",
-            status = status,
-            ipAddress = serverUrl.replace("ws://", "").replace(":8123", ""),
-            latencyMs = latencyMs
-        )
-
-        // This Smartphone (Local Node)
-        DeviceCard(
-            name = Build.MODEL ?: "Este teléfono",
-            type = "phone",
-            status = "CONNECTED",
-            ipAddress = "Nodo Local",
-            batteryPct = iotSnapshot.batteryPct,
-            onClick = { showSensorsDetail = !showSensorsDetail }
-        )
-
-        // Remote IoT Nodes if present
-        if (!remoteNodeLabel.isNullOrBlank()) {
-            DeviceCard(
-                name = "Nodo Externo: $remoteNodeLabel",
-                type = "iot",
-                status = "CONNECTED",
-                ipAddress = "ESP32 / Telemetría activa"
-            )
-        }
-
-        // 2. Hardware Remote Controls for Connected Laptop
-        SectionHeader(title = "Controles Remotos de Laptop")
-
-        if (!isConnected) {
-            Surface(
-                shape = DesignTokens.ShapeMedium,
-                color = DesignTokens.StatusConnecting.copy(alpha = 0.08f),
-                border = BorderStroke(1.dp, DesignTokens.StatusConnecting.copy(alpha = 0.3f)),
-                modifier = Modifier.fillMaxWidth()
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // 1. TOP BAR: [< Control de dispositivo] | [⏻ Power]
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(
-                    modifier = Modifier.padding(14.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    Icon(Icons.Outlined.Tune, contentDescription = null, tint = DesignTokens.StatusConnecting, modifier = Modifier.size(20.dp))
-                    Text(
-                        "Conecta tu laptop para habilitar los controles de hardware.",
-                        color = DesignTokens.TextSecondary,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-            }
-        }
-
-        // Grid of Real Controls
-        FlowRow(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            val buttonModifier = Modifier.width(100.dp)
-
-            ControlButton(
-                label = "Bloquear",
-                icon = Icons.Outlined.Lock,
-                onClick = onLock,
-                enabled = isConnected,
-                modifier = buttonModifier
-            )
-            ControlButton(
-                label = "Silenciar",
-                icon = Icons.Outlined.VolumeMute,
-                onClick = onVolumeMute,
-                enabled = isConnected,
-                modifier = buttonModifier
-            )
-            ControlButton(
-                label = "Volumen +",
-                icon = Icons.Outlined.VolumeUp,
-                onClick = onVolumeUp,
-                enabled = isConnected,
-                modifier = buttonModifier
-            )
-            ControlButton(
-                label = "Volumen -",
-                icon = Icons.Outlined.VolumeDown,
-                onClick = onVolumeDown,
-                enabled = isConnected,
-                modifier = buttonModifier
-            )
-            ControlButton(
-                label = "Play / Pause",
-                icon = Icons.Outlined.PlayArrow,
-                onClick = onMediaPlayPause,
-                enabled = isConnected,
-                modifier = buttonModifier
-            )
-            ControlButton(
-                label = "Siguiente",
-                icon = Icons.Outlined.NavigateNext,
-                onClick = onPresentationNext,
-                enabled = isConnected,
-                modifier = buttonModifier
-            )
-            ControlButton(
-                label = "Anterior",
-                icon = Icons.Outlined.NavigateBefore,
-                onClick = onPresentationPrev,
-                enabled = isConnected,
-                modifier = buttonModifier
-            )
-            ControlButton(
-                label = "Ping",
-                icon = Icons.Outlined.Speed,
-                onClick = onPing,
-                enabled = isConnected,
-                modifier = buttonModifier
-            )
-            ControlButton(
-                label = "Reiniciar",
-                icon = Icons.Outlined.Refresh,
-                onClick = onReboot,
-                enabled = isConnected,
-                modifier = buttonModifier
-            )
-            ControlButton(
-                label = "Apagar",
-                icon = Icons.Outlined.PowerSettingsNew,
-                onClick = onPower,
-                isDestructive = true,
-                enabled = isConnected,
-                modifier = buttonModifier
-            )
-            ControlButton(
-                label = "Abortar",
-                icon = Icons.Outlined.Cancel,
-                onClick = onAbort,
-                enabled = isConnected,
-                modifier = buttonModifier
-            )
-        }
-
-        // 3. Contextual IoT Integration (Device Detail -> Sensors)
-        SectionHeader(
-            title = "Sensores del Dispositivo (IoT)",
-            actionLabel = if (showSensorsDetail) "Ocultar" else "Ver telemetría",
-            onAction = { showSensorsDetail = !showSensorsDetail }
-        )
-
-        AnimatedVisibility(visible = showSensorsDetail) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = DesignTokens.ShapeMedium,
-                colors = CardDefaults.cardColors(containerColor = DesignTokens.SurfaceWhite),
-                border = BorderStroke(1.dp, DesignTokens.SurfaceBorder)
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Text(
-                        "Sensores Físicos Disponibles",
-                        color = DesignTokens.TextPrimary,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        "Solo se muestran sensores físicos reales detectados en este hardware.",
-                        color = DesignTokens.TextSecondary,
-                        fontSize = 11.sp
-                    )
-
-                    // Real Sensors Grid
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        iotSnapshot.lightLux?.let { SensorChip("Luz", String.format(java.util.Locale.US, "%.1f lx", it)) }
-                        iotSnapshot.accelG?.let { SensorChip("Acelerómetro", String.format(java.util.Locale.US, "%.2f g", it)) }
-                        iotSnapshot.proximityCm?.let { SensorChip("Proximidad", String.format(java.util.Locale.US, "%.1f cm", it)) }
-                        iotSnapshot.batteryPct?.let { SensorChip("Batería", "$it%${if (iotSnapshot.charging) " +" else ""}") }
-                        iotSnapshot.steps?.let { SensorChip("Pasos", it.toString()) }
-                        iotSnapshot.tempC?.let { SensorChip("Temperatura", String.format(java.util.Locale.US, "%.1f °C", it)) }
-                        iotSnapshot.humidity?.let { SensorChip("Humedad", String.format(java.util.Locale.US, "%.1f %%", it)) }
-                        iotSnapshot.pressureHpa?.let { SensorChip("Presión", String.format(java.util.Locale.US, "%.1f hPa", it)) }
-                        if (iotSnapshot.lat != null && iotSnapshot.lng != null) {
-                            SensorChip("GPS", String.format(java.util.Locale.US, "%.3f, %.3f", iotSnapshot.lat, iotSnapshot.lng))
-                        }
-                    }
-
-                    if (iotSnapshot.available.isEmpty()) {
-                        Text("No se detectaron sensores activos adicionales.", color = DesignTokens.TextMuted, fontSize = 12.sp)
-                    }
-
-                    Spacer(Modifier.height(4.dp))
-
-                    Button(
-                        onClick = onToggleStreamIot,
-                        modifier = Modifier.fillMaxWidth().height(44.dp),
-                        shape = DesignTokens.ShapeSmall,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (isStreamingIot) DesignTokens.StatusConnected else DesignTokens.ElectricBlue,
-                            contentColor = Color.White
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            Icons.Outlined.ChevronLeft,
+                            contentDescription = "Volver",
+                            tint = textWhite,
+                            modifier = Modifier.size(28.dp)
                         )
-                    ) {
-                        Icon(Icons.Outlined.Sensors, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(8.dp))
+                    }
+                    Column {
                         Text(
-                            text = if (isStreamingIot) "Transmitiendo telemetría al PC" else "Iniciar transmisión de sensores",
-                            fontSize = 12.sp,
+                            text = "Control de dispositivo",
+                            color = textWhite,
+                            fontSize = 20.sp,
                             fontWeight = FontWeight.Bold
                         )
-                    }
-
-                    Surface(
-                        shape = DesignTokens.ShapeSmall,
-                        color = DesignTokens.SurfaceSubtle,
-                        border = BorderStroke(1.dp, DesignTokens.SurfaceBorder),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text("Integración ESP32 / Arduino externa:", color = DesignTokens.TextPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                            Text("POST http://IP-LAPTOP:8123/api/iot con JSON IOT_TELEMETRY.", color = DesignTokens.TextSecondary, fontSize = 11.sp)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text(
+                                text = "Xiaomi 2312",
+                                color = textCyan,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .size(6.dp)
+                                    .clip(CircleShape)
+                                    .background(if (isConnected) Color(0xFF10B981) else Color(0xFFEF4444))
+                            )
+                            Text(
+                                text = if (isConnected) "Conectado" else "Desconectado",
+                                color = if (isConnected) Color(0xFF10B981) else Color(0xFFEF4444),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium
+                            )
                         }
                     }
                 }
-            }
-        }
 
-        Spacer(Modifier.height(10.dp))
+                IconButton(
+                    onClick = {
+                        scope.launch {
+                            repository.lockScreen()
+                            Toast.makeText(context, "Comando enviado", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFF0F172A))
+                            .border(1.dp, Color(0xFF1E293B), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Outlined.PowerSettingsNew,
+                            contentDescription = "Power",
+                            tint = textWhite,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+            }
+
+            // 2. SEGMENTED FILTER PILLS: [Control] [Archivos] [Portapapeles] [Info]
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                listOf("Control", "Archivos", "Portapapeles", "Info").forEach { seg ->
+                    val isSel = selectedSegment == seg
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(34.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(if (isSel) activeBlue else Color(0xFF0D1527))
+                            .border(1.dp, if (isSel) activeBlue else Color(0x2200BFFF), RoundedCornerShape(10.dp))
+                            .clickable {
+                                selectedSegment = seg
+                                when (seg) {
+                                    "Archivos" -> onNavigateTab("files")
+                                    "Portapapeles" -> onNavigateTab("clipboard")
+                                }
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = seg,
+                            color = textWhite,
+                            fontSize = 12.sp,
+                            fontWeight = if (isSel) FontWeight.Bold else FontWeight.Medium
+                        )
+                    }
+                }
+            }
+
+            // 3. LAPTOP VISUAL BANNER (Matches Screen 3)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(160.dp)
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(
+                        Brush.linearGradient(
+                            listOf(Color(0xFF0A152E), Color(0xFF050811), Color(0xFF1E1435))
+                        )
+                    )
+                    .border(1.dp, cardBorder, RoundedCornerShape(18.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.laptop_hero),
+                    contentDescription = "Laptop Render",
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(8.dp),
+                    contentScale = ContentScale.Fit
+                )
+            }
+
+            // 4. 3x3 CONTROL GRID (Matches Screen 3 with exact actions)
+            // Row 1: [Bloquear (active blue)] [Reiniciar] [Apagar]
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                ControlGridTile(
+                    icon = Icons.Outlined.Lock,
+                    label = "Bloquear",
+                    isActive = true,
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        scope.launch {
+                            repository.lockScreen()
+                            Toast.makeText(context, "Pantalla PC bloqueada", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                )
+                ControlGridTile(
+                    icon = Icons.Outlined.Refresh,
+                    label = "Reiniciar",
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        scope.launch {
+                            repository.rebootPc()
+                            Toast.makeText(context, "Reiniciando PC...", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                )
+                ControlGridTile(
+                    icon = Icons.Outlined.PowerSettingsNew,
+                    label = "Apagar",
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        scope.launch {
+                            repository.shutdownPc()
+                            Toast.makeText(context, "Apagando PC...", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                )
+            }
+
+            // Row 2: [Volumen] [Presentación] [Captura]
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                ControlGridTile(
+                    icon = Icons.Outlined.VolumeUp,
+                    label = "Volumen",
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        scope.launch {
+                            repository.adjustVolume("VOLUME_UP")
+                            Toast.makeText(context, "Volumen PC +", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                )
+                ControlGridTile(
+                    icon = Icons.Outlined.Tv,
+                    label = "Presentación",
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        scope.launch {
+                            repository.presentationNext()
+                            Toast.makeText(context, "Siguiente diapositiva", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                )
+                ControlGridTile(
+                    icon = Icons.Outlined.CropFree,
+                    label = "Captura",
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        scope.launch {
+                            repository.sendMessage("TRIGGER_SCREENSHOT", "{}")
+                            Toast.makeText(context, "Captura solicitada", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                )
+            }
+
+            // Row 3: [Multimedia] [Enviar archivo] [Más]
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                ControlGridTile(
+                    icon = Icons.Outlined.PlayArrow,
+                    label = "Multimedia",
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        scope.launch {
+                            repository.sendMessage("MEDIA_PLAY_PAUSE", "{}")
+                            Toast.makeText(context, "Play / Pause", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                )
+                ControlGridTile(
+                    icon = Icons.Outlined.UploadFile,
+                    label = "Enviar archivo",
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        filePicker.launch(arrayOf("*/*"))
+                    }
+                )
+                ControlGridTile(
+                    icon = Icons.Outlined.MoreHoriz,
+                    label = "Más",
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        Toast.makeText(context, "Opciones de dispositivo", Toast.LENGTH_SHORT).show()
+                    }
+                )
+            }
+
+            Spacer(Modifier.height(16.dp))
+        }
     }
 }
 
 @Composable
-private fun SensorChip(label: String, value: String) {
-    Surface(
-        shape = DesignTokens.ShapeSmall,
-        color = DesignTokens.SurfaceSubtle,
-        border = BorderStroke(1.dp, DesignTokens.SurfaceBorder)
+private fun ControlGridTile(
+    icon: ImageVector,
+    label: String,
+    modifier: Modifier = Modifier,
+    isActive: Boolean = false,
+    onClick: () -> Unit
+) {
+    val bg = if (isActive) Color(0xFF007AFF) else Color(0xFF0D1527)
+    val border = if (isActive) Color(0xFF007AFF) else Color(0x2200BFFF)
+
+    Box(
+        modifier = modifier
+            .height(86.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(bg)
+            .border(1.dp, border, RoundedCornerShape(16.dp))
+            .clickable(onClick = onClick)
+            .padding(10.dp),
+        contentAlignment = Alignment.Center
     ) {
-        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
-            Text(value, color = DesignTokens.ElectricBlue, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-            Text(label, color = DesignTokens.TextSecondary, fontSize = 10.sp, fontWeight = FontWeight.Medium)
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = label,
+                tint = Color.White,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = label,
+                color = Color.White,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Medium
+            )
         }
     }
 }

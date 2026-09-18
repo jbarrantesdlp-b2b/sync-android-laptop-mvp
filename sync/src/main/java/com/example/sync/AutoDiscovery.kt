@@ -187,7 +187,7 @@ class AutoDiscovery(
         val adapter = (context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager)?.adapter ?: return
         val scanner = adapter.bluetoothLeScanner ?: return
         val filter = ScanFilter.Builder()
-            .setManufacturerData(BLE_COMPANY, byteArrayOf(0x53, 0x45), byteArrayOf(0xFF, 0xFF))
+            .setManufacturerData(BLE_COMPANY, byteArrayOf(0x53.toByte(), 0x45.toByte()), byteArrayOf(0xFF.toByte(), 0xFF.toByte()))
             .build()
         val settings = ScanSettings.Builder()
             .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)

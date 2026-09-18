@@ -32,6 +32,11 @@ import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 
+/**
+ * 2x2 Widget Acciones (Acceso Rápido) - Exact Match to media_1789632468509.jpg:
+ * [🔄 Sync]       [↗ Enviar]
+ * [✦ IA]         [🔒 Bloquear]
+ */
 @Suppress("RestrictedApi")
 object ActionsGlanceWidget : GlanceAppWidget() {
     override val sizeMode: SizeMode = SizeMode.Single
@@ -47,29 +52,37 @@ object ActionsGlanceWidget : GlanceAppWidget() {
             ) {
                 Row(modifier = GlanceModifier.fillMaxWidth().defaultWeight()) {
                     ActionTile(
-                        "\u21bb",
-                        "Sync",
-                        GlanceModifier.defaultWeight().clickable(actionRunCallback<ManualSyncAction>())
+                        symbol = "🔄",
+                        label = "Sync",
+                        bgRes = R.drawable.widget_tile_bg,
+                        symbolColor = Color(0xFF00BFFF),
+                        modifier = GlanceModifier.defaultWeight().clickable(actionRunCallback<ManualSyncAction>())
                     )
                     Spacer(GlanceModifier.width(8.dp))
                     ActionTile(
-                        "\u2191",
-                        "Enviar",
-                        GlanceModifier.defaultWeight().clickable(actionStartActivity(openAppIntent("clipboard")))
+                        symbol = "↗",
+                        label = "Enviar",
+                        bgRes = R.drawable.widget_tile_bg,
+                        symbolColor = Color.White,
+                        modifier = GlanceModifier.defaultWeight().clickable(actionStartActivity(openAppIntent("clipboard")))
                     )
                 }
                 Spacer(GlanceModifier.height(8.dp))
                 Row(modifier = GlanceModifier.fillMaxWidth().defaultWeight()) {
                     ActionTile(
-                        "\uD83D\uDD12",
-                        "Bloquear",
-                        GlanceModifier.defaultWeight().clickable(actionRunCallback<LockPcAction>())
+                        symbol = "✦",
+                        label = "IA",
+                        bgRes = R.drawable.widget_tile_bg,
+                        symbolColor = Color(0xFF38BDF8),
+                        modifier = GlanceModifier.defaultWeight().clickable(actionStartActivity(openAppIntent("ai")))
                     )
                     Spacer(GlanceModifier.width(8.dp))
                     ActionTile(
-                        "\u2726",
-                        "IA",
-                        GlanceModifier.defaultWeight().clickable(actionStartActivity(openAppIntent("ai")))
+                        symbol = "🔒",
+                        label = "Bloquear",
+                        bgRes = R.drawable.widget_tile_bg,
+                        symbolColor = Color(0xFFEF4444),
+                        modifier = GlanceModifier.defaultWeight().clickable(actionRunCallback<LockPcAction>())
                     )
                 }
             }
@@ -79,30 +92,38 @@ object ActionsGlanceWidget : GlanceAppWidget() {
 
 @Suppress("RestrictedApi")
 @Composable
-private fun ActionTile(symbol: String, label: String, modifier: GlanceModifier) {
+private fun ActionTile(
+    symbol: String,
+    label: String,
+    bgRes: Int,
+    symbolColor: Color,
+    modifier: GlanceModifier
+) {
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(ImageProvider(R.drawable.widget_tile_bg))
-            .cornerRadius(18.dp)
+            .background(ImageProvider(bgRes))
+            .cornerRadius(16.dp)
             .padding(6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
             text = symbol,
             style = TextStyle(
                 fontSize = 18.sp,
-                color = ColorProvider(Color(0xFF00BFFF)),
+                fontWeight = FontWeight.Bold,
+                color = ColorProvider(symbolColor),
                 textAlign = TextAlign.Center
             )
         )
+        Spacer(GlanceModifier.height(4.dp))
         Text(
             text = label,
             style = TextStyle(
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Medium,
-                color = ColorProvider(Color(0xFFE2E8F0)),
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                color = ColorProvider(Color.White),
                 textAlign = TextAlign.Center
             )
         )

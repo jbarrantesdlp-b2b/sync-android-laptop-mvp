@@ -91,7 +91,33 @@ function startBle(getIp, port, onLog) {
   };
 }
 
-function startDiscovery({ getIp, port, onLog }) {
+function defaultGetIp() {
+  const interfaces = os.networkInterfaces();
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name]) {
+      if (iface.family === 'IPv4' && !iface.internal) {
+        return iface.address;
+      }
+    }
+  }
+  return '127.0.0.1';
+}
+
+function startDiscovery(opts) {
+  let getIp = defaultGetIp;
+  let port = 8123;
+  let onLog = console.log;
+
+  if (typeof opts === 'number') {
+    port = opts;
+  } else if (typeof opts === 'function') {
+    getIp = opts;
+  } else if (opts && typeof opts === 'object') {
+    if (typeof opts.getIp === 'function') getIp = opts.getIp;
+    if (opts.port) port = opts.port;
+    if (typeof opts.onLog === 'function') onLog = opts.onLog;
+  }
+
   const stopUdp = startUdpBeacon(getIp, port, onLog);
   const stopMdns = startMdns(getIp, port, onLog);
   const stopBle = startBle(getIp, port, onLog);

@@ -51,6 +51,9 @@ class SyncApp : Application() {
         syncTrigger = SyncTrigger(this, repository, prefs)
         syncTrigger?.start()
 
+        // Auto-discover and connect on startup via Wi-Fi subnet probe
+        repository.autoDiscoverAndConnect()
+
         discovery = AutoDiscovery(this, ::onLaptopFound)
         discovery.start()
     }

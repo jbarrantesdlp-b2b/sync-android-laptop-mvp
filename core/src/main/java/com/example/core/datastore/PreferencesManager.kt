@@ -22,15 +22,15 @@ class PreferencesManager(private val context: Context) {
     }
 
     val serverUrlFlow: Flow<String> = context.dataStore.data
-        .map { prefs -> prefs[KEY_SERVER_URL] ?: "ws://10.0.2.2:8123" }
+        .map { prefs -> prefs[KEY_SERVER_URL] ?: "ws://192.168.1.49:8123" }
 
     val geminiApiKeyFlow: Flow<String> = context.dataStore.data
         .map { prefs -> prefs[KEY_GEMINI_KEY] ?: "" }
 
     val themePackFlow: Flow<ThemePack> = context.dataStore.data
         .map { prefs ->
-            val raw = prefs[KEY_THEME] ?: ThemePack.SyncEngine.name
-            ThemePack.values().find { it.name == raw } ?: ThemePack.SyncEngine
+            val raw = prefs[KEY_THEME]
+            ThemePack.fromString(raw)
         }
 
     val fontFamilyFlow: Flow<String> = context.dataStore.data

@@ -6,23 +6,26 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AutoAwesome
+import androidx.compose.material.icons.outlined.ContentPaste
+import androidx.compose.material.icons.outlined.Devices
 import androidx.compose.material.icons.outlined.Folder
-import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Smartphone
+import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -30,10 +33,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.core.model.ThemePack
 import com.example.data.SyncMessage
 import com.example.sync.ai.GeminiClient
@@ -42,34 +45,30 @@ import com.example.syncapp.SyncViewModel
 import com.example.syncapp.iot.IotSensorHub
 import com.example.syncapp.ui.components.FeedbackToast
 import com.example.syncapp.ui.components.SyncEngineTopBar
-import com.example.syncapp.ui.components.SyncNavItem
 import com.example.syncapp.ui.panes.ActivityPane
 import com.example.syncapp.ui.panes.AiPane
-import com.example.syncapp.ui.panes.BridgePane
 import com.example.syncapp.ui.panes.DevicesPane
 import com.example.syncapp.ui.panes.HomePane
+import com.example.syncapp.ui.panes.RemoteDrivePane
 import com.example.syncapp.ui.panes.SettingsBottomSheet
-import com.example.syncapp.ui.theme.DesignTokens
 import com.example.syncapp.ui.theme.SyncTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
 /**
- * Definitively exactly 5 main areas:
- * 1. Inicio (Home)
- * 2. Dispositivos (Devices)
- * 3. Actividad (Activity)
- * 4. Bridge (Bridge)
- * 5. IA (IA Assist)
- *
- * Ajustes is secondary (accessed via top bar).
+ * 5 Canonical Destinations matching master design media_1789632468509.jpg:
+ * 1. Inicio (Pantalla de inicio animada)
+ * 2. Dispositivos (Control de dispositivo / Control remoto)
+ * 3. Actividad (Portapapeles / Flujo de clips)
+ * 4. Archivos (Explorador del Disco Duro de Laptop / Remote Drive)
+ * 5. IA (IA Assist con Gemini AI)
  */
 enum class AppTab {
     Home,
     Devices,
     Activity,
-    Bridge,
+    Files,
     Ai
 }
 
@@ -79,7 +78,6 @@ fun SettingsScreen(
     initialTab: String? = null
 ) {
     val context = LocalContext.current
-    val clipboardManager = LocalClipboardManager.current
     val syncApp = remember { SyncApp.instance }
     val prefs = syncApp.prefs
     val repository = syncApp.repository
@@ -89,7 +87,6 @@ fun SettingsScreen(
 
     // IoT Sensor Hub
     val hub = remember { IotSensorHub(context) }
-    val iotSnapshot by hub.snapshot.collectAsState()
     DisposableEffect(Unit) {
         hub.start()
         onDispose { hub.stop() }
@@ -97,34 +94,34 @@ fun SettingsScreen(
 
     // Reactive states from repository & prefs
     var connectionStatus by remember { mutableStateOf("UNKNOWN") }
-    var currentTheme by remember { mutableStateOf(ThemePack.SyncEngine) }
+    var currentTheme by remember { mutableStateOf(ThemePack.NeoObsidian) }
     var technicalLogs by remember { mutableStateOf(listOf<String>()) }
-    var serverUrl by remember { mutableStateOf("ws://10.0.2.2:8123") }
+    var serverUrl by remember { mutableStateOf("ws://192.168.1.49:8123") }
     var geminiApiKey by remember { mutableStateOf("") }
     var latencyMs by remember { mutableStateOf<Long?>(null) }
     var remoteIotNode by remember { mutableStateOf<String?>(null) }
     var recentEvents by remember { mutableStateOf(listOf<SyncMessage>()) }
     var toastMessage by remember { mutableStateOf<String?>(null) }
 
-    // Controlled IoT streaming (on-demand only, not unconditional)
-    var isStreamingIot by remember { mutableStateOf(false) }
-
     // Secondary UI states
     var showSettingsSheet by remember { mutableStateOf(false) }
     var showQrScanner by remember { mutableStateOf(false) }
-    var aiContextBridgeText by remember { mutableStateOf("") }
 
-    // Navigation tab
+    // Navigation tab - 5 Canonical tabs
     var currentTab by remember {
         mutableStateOf(
             when (initialTab?.lowercase()) {
-                "device", "devices" -> AppTab.Devices
-                "activity" -> AppTab.Activity
-                "bridge", "clipboard", "files" -> AppTab.Bridge
-                "ai" -> AppTab.Ai
+                "devices", "control", "mando" -> AppTab.Devices
+                "activity", "clipboard", "portapapeles" -> AppTab.Activity
+                "files", "drive", "disco" -> AppTab.Files
+                "ai", "ia", "gemini" -> AppTab.Ai
                 else -> AppTab.Home
             }
         )
+    }
+
+    val geminiClient = remember(geminiApiKey) {
+        GeminiClient { geminiApiKey }
     }
 
     fun showFeedback(msg: String) {
@@ -134,13 +131,6 @@ fun SettingsScreen(
 
     fun logTechnical(msg: String) {
         technicalLogs = (technicalLogs + msg).takeLast(60)
-    }
-
-    // Gemini Client initialized with stored key
-    val geminiClient = remember(geminiApiKey) {
-        GeminiClient(apiKeyProvider = {
-            if (geminiApiKey.isNotBlank()) geminiApiKey else "AQ.Ab8RN6Iqx7tg9BpiMO46e7v7EdKSoj8q3G72AeTWbN8DH0IP1w"
-        })
     }
 
     // Collect flows
@@ -195,67 +185,89 @@ fun SettingsScreen(
         }
     }
 
-    // Periodic check for history
     LaunchedEffect(Unit) {
-        while (true) {
-            recentEvents = repository.getMessageHistory(40)
-            delay(3000)
-        }
+        recentEvents = repository.getMessageHistory(40)
     }
 
-    // Controlled IoT streaming: only when user has enabled it explicitly
-    LaunchedEffect(isStreamingIot, connectionStatus) {
-        while (isStreamingIot && connectionStatus == "CONNECTED") {
-            repository.sendIotTelemetry(hub.snapshot.value.toPayloadJson(IotSensorHub.deviceName()))
-            delay(2500)
-        }
-    }
+    val bgOled = Color(0xFF050811)
+    val barSurface = Color(0xFF090F1D)
+    val textCyan = Color(0xFF00BFFF)
+    val textMuted = Color(0xFF64748B)
 
     SyncTheme(currentTheme) {
         Scaffold(
-            containerColor = DesignTokens.CanvasBackground,
-            topBar = {
-                SyncEngineTopBar(
-                    status = connectionStatus,
-                    onOpenSettings = { showSettingsSheet = true },
-                    modifier = Modifier.statusBarsPadding()
-                )
-            },
+            containerColor = bgOled,
             bottomBar = {
+                // 5 Canonical Navigation Items (Exact match to all 5 screens in master design)
                 NavigationBar(
-                    containerColor = DesignTokens.NavigationDarkBg,
+                    containerColor = barSurface,
                     tonalElevation = 0.dp,
                     modifier = Modifier.navigationBarsPadding()
                 ) {
-                    SyncNavItem(
+                    NavigationBarItem(
                         selected = currentTab == AppTab.Home,
                         onClick = { currentTab = AppTab.Home },
-                        icon = Icons.Outlined.Home,
-                        label = "Inicio"
+                        icon = { Icon(Icons.Outlined.Home, contentDescription = "Inicio", modifier = Modifier.size(22.dp)) },
+                        label = { Text("Inicio", fontSize = 11.sp) },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = textCyan,
+                            selectedTextColor = textCyan,
+                            unselectedIconColor = textMuted,
+                            unselectedTextColor = textMuted,
+                            indicatorColor = textCyan.copy(alpha = 0.12f)
+                        )
                     )
-                    SyncNavItem(
+                    NavigationBarItem(
                         selected = currentTab == AppTab.Devices,
                         onClick = { currentTab = AppTab.Devices },
-                        icon = Icons.Outlined.Smartphone,
-                        label = "Dispositivos"
+                        icon = { Icon(Icons.Outlined.Devices, contentDescription = "Dispositivos", modifier = Modifier.size(22.dp)) },
+                        label = { Text("Dispositivos", fontSize = 11.sp) },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = textCyan,
+                            selectedTextColor = textCyan,
+                            unselectedIconColor = textMuted,
+                            unselectedTextColor = textMuted,
+                            indicatorColor = textCyan.copy(alpha = 0.12f)
+                        )
                     )
-                    SyncNavItem(
+                    NavigationBarItem(
                         selected = currentTab == AppTab.Activity,
                         onClick = { currentTab = AppTab.Activity },
-                        icon = Icons.Outlined.History,
-                        label = "Actividad"
+                        icon = { Icon(Icons.Outlined.ContentPaste, contentDescription = "Actividad", modifier = Modifier.size(22.dp)) },
+                        label = { Text("Actividad", fontSize = 11.sp) },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = textCyan,
+                            selectedTextColor = textCyan,
+                            unselectedIconColor = textMuted,
+                            unselectedTextColor = textMuted,
+                            indicatorColor = textCyan.copy(alpha = 0.12f)
+                        )
                     )
-                    SyncNavItem(
-                        selected = currentTab == AppTab.Bridge,
-                        onClick = { currentTab = AppTab.Bridge },
-                        icon = Icons.Outlined.Folder,
-                        label = "Bridge"
+                    NavigationBarItem(
+                        selected = currentTab == AppTab.Files,
+                        onClick = { currentTab = AppTab.Files },
+                        icon = { Icon(Icons.Outlined.Folder, contentDescription = "Archivos", modifier = Modifier.size(22.dp)) },
+                        label = { Text("Archivos", fontSize = 11.sp) },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = textCyan,
+                            selectedTextColor = textCyan,
+                            unselectedIconColor = textMuted,
+                            unselectedTextColor = textMuted,
+                            indicatorColor = textCyan.copy(alpha = 0.12f)
+                        )
                     )
-                    SyncNavItem(
+                    NavigationBarItem(
                         selected = currentTab == AppTab.Ai,
                         onClick = { currentTab = AppTab.Ai },
-                        icon = Icons.Outlined.AutoAwesome,
-                        label = "IA"
+                        icon = { Icon(Icons.Outlined.AutoAwesome, contentDescription = "IA", modifier = Modifier.size(22.dp)) },
+                        label = { Text("IA", fontSize = 11.sp) },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = textCyan,
+                            selectedTextColor = textCyan,
+                            unselectedIconColor = textMuted,
+                            unselectedTextColor = textMuted,
+                            indicatorColor = textCyan.copy(alpha = 0.12f)
+                        )
                     )
                 }
             }
@@ -271,117 +283,75 @@ fun SettingsScreen(
                             status = connectionStatus,
                             latencyMs = latencyMs,
                             serverUrl = serverUrl,
-                            recentEvents = recentEvents,
-                            batteryPct = iotSnapshot.batteryPct,
-                            onSync = {
-                                repository.triggerManualSync()
-                                showFeedback("Sincronizando...")
+                            repository = repository,
+                            currentTheme = currentTheme,
+                            onOpenDevices = { currentTab = AppTab.Devices },
+                            onOpenClipboard = { currentTab = AppTab.Activity },
+                            onOpenDrive = { currentTab = AppTab.Files },
+                            onOpenAi = { currentTab = AppTab.Ai },
+                            onOpenSettings = { showSettingsSheet = true },
+                            onOpenQrScanner = { showQrScanner = true },
+                            onDirectConnect = { targetUrl ->
+                                scope.launch {
+                                    prefs.setServerUrl(targetUrl)
+                                    repository.connectToServer(targetUrl)
+                                    showFeedback("Enlazando con $targetUrl...")
+                                }
                             },
-                            onQuickSend = { currentTab = AppTab.Bridge },
-                            onQuickAi = { currentTab = AppTab.Ai },
-                            onQuickControl = { currentTab = AppTab.Devices },
-                            onViewAllActivity = { currentTab = AppTab.Activity },
-                            onOpenDeviceDetail = { currentTab = AppTab.Devices }
+                            modifier = Modifier.statusBarsPadding()
                         )
                     }
 
                     AppTab.Devices -> {
                         DevicesPane(
                             status = connectionStatus,
-                            serverUrl = serverUrl,
-                            latencyMs = latencyMs,
-                            remoteNodeLabel = remoteIotNode,
-                            iotSnapshot = iotSnapshot,
-                            isStreamingIot = isStreamingIot,
-                            onToggleStreamIot = {
-                                isStreamingIot = !isStreamingIot
-                                showFeedback(if (isStreamingIot) "Telemetría activada hacia el PC" else "Telemetría pausada")
+                            repository = repository,
+                            onBack = { currentTab = AppTab.Home },
+                            onNavigateTab = { tabKey ->
+                                when (tabKey) {
+                                    "files" -> currentTab = AppTab.Files
+                                    "clipboard" -> currentTab = AppTab.Activity
+                                }
                             },
-                            onLock = {
-                                val ok = repository.lockScreen()
-                                showFeedback(if (ok) "Bloqueando laptop Windows..." else "Sin conexión con la laptop")
-                            },
-                            onVolumeUp = {
-                                repository.adjustVolume("VOLUME_UP")
-                                showFeedback("Volumen +")
-                            },
-                            onVolumeDown = {
-                                repository.adjustVolume("VOLUME_DOWN")
-                                showFeedback("Volumen -")
-                            },
-                            onVolumeMute = {
-                                repository.adjustVolume("VOLUME_MUTE")
-                                showFeedback("Audio silenciado")
-                            },
-                            onMediaPlayPause = {
-                                repository.adjustVolume("MEDIA_PLAY_PAUSE")
-                                showFeedback("Play / Pause")
-                            },
-                            onPresentationNext = {
-                                repository.presentationNext()
-                                showFeedback("Diapositiva siguiente")
-                            },
-                            onPresentationPrev = {
-                                repository.presentationPrev()
-                                showFeedback("Diapositiva anterior")
-                            },
-                            onPing = {
-                                val ok = repository.sendPing()
-                                showFeedback(if (ok) "Ping enviado. Esperando respuesta..." else "Sin conexión")
-                            },
-                            onPower = {
-                                repository.shutdownPc()
-                                showFeedback("Apagado en 60s. Usa 'Abortar' para cancelar.")
-                            },
-                            onReboot = {
-                                repository.rebootPc()
-                                showFeedback("Reinicio en 60s. Usa 'Abortar' para cancelar.")
-                            },
-                            onAbort = {
-                                repository.abortShutdown()
-                                showFeedback("Apagado/Reinicio cancelado")
-                            }
+                            modifier = Modifier.statusBarsPadding()
                         )
                     }
 
                     AppTab.Activity -> {
-                        ActivityPane(events = recentEvents)
+                        ActivityPane(
+                            events = recentEvents,
+                            repository = repository,
+                            onSendToPc = { txt ->
+                                scope.launch {
+                                    repository.syncClipboard(txt)
+                                    showFeedback("Texto enviado a laptop")
+                                }
+                            },
+                            modifier = Modifier.statusBarsPadding()
+                        )
                     }
 
-                    AppTab.Bridge -> {
-                        BridgePane(
-                            clipboardHistory = recentEvents,
-                            onSendClipboard = { text ->
-                                val ok = repository.syncClipboard(text)
-                                showFeedback(if (ok) "Texto enviado a la laptop" else "Sin conexión")
-                            },
-                            onCopyLocal = { text ->
-                                clipboardManager.setText(AnnotatedString(text))
-                                showFeedback("Copiado al portapapeles")
-                            },
-                            onOpenUrlOnPc = { url ->
-                                val ok = repository.openUrlOnPc(url)
-                                showFeedback(if (ok) "Abriendo URL en la laptop..." else "Sin conexión")
-                            },
-                            onSendToAi = { text ->
-                                aiContextBridgeText = text
-                                currentTab = AppTab.Ai
-                            }
+                    AppTab.Files -> {
+                        RemoteDrivePane(
+                            repository = repository,
+                            isConnected = connectionStatus == "CONNECTED",
+                            modifier = Modifier.statusBarsPadding()
                         )
                     }
 
                     AppTab.Ai -> {
                         AiPane(
                             geminiClient = geminiClient,
-                            initialContextText = aiContextBridgeText,
-                            onCopyResult = { text ->
-                                clipboardManager.setText(AnnotatedString(text))
-                                showFeedback("Resultado copiado")
+                            onCopyResult = { txt ->
+                                showFeedback("Copiado")
                             },
-                            onSendToPc = { text ->
-                                val ok = repository.syncClipboard(text)
-                                showFeedback(if (ok) "Resultado enviado a la laptop" else "Sin conexión")
-                            }
+                            onSendToPc = { txt ->
+                                scope.launch {
+                                    repository.syncClipboard(txt)
+                                    showFeedback("Resultado enviado a la Laptop")
+                                }
+                            },
+                            modifier = Modifier.statusBarsPadding()
                         )
                     }
                 }
