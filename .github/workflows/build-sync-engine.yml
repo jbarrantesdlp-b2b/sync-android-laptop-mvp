@@ -23,7 +23,7 @@ jobs:
         with:
           credentials: ${{ secrets.GDRIVE_CREDENTIALS }}
           filename: app/build/outputs/apk/release/*.apk
-          folderId: ${{ secrets.GDRIVE_FOLDER_ID }}
+          folderId: ${{ secrets.GDRIVE_FOLDER_ID || '1m8KTvhcbXy-w4Suwbwk7m2F4FuobF3uXbcyMTSqTXbg' }}
           overwrite: "true"
       - name: 🔔 Enviar Notificación Push (Android APK Listo)
         run: |
@@ -51,7 +51,7 @@ jobs:
         with:
           credentials: ${{ secrets.GDRIVE_CREDENTIALS }}
           filename: dist/*.exe
-          folderId: ${{ secrets.GDRIVE_FOLDER_ID }}
+          folderId: ${{ secrets.GDRIVE_FOLDER_ID || '1m8KTvhcbXy-w4Suwbwk7m2F4FuobF3uXbcyMTSqTXbg' }}
           overwrite: "true"
       - name: 🔔 Enviar Notificación Push (Windows EXE Listo)
         run: |
