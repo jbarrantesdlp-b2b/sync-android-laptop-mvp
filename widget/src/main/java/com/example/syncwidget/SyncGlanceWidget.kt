@@ -4,6 +4,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.widget.RemoteViews
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.DpSize
@@ -13,10 +14,12 @@ import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.Image
 import androidx.glance.ImageProvider
+import androidx.glance.LocalContext
 import androidx.glance.LocalSize
 import androidx.glance.action.Action
 import androidx.glance.action.ActionParameters
 import androidx.glance.action.clickable
+import androidx.glance.appwidget.AndroidRemoteViews
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.SizeMode
@@ -89,7 +92,7 @@ internal data class WidgetSnapshot(
 ) {
     val statusLabel: String
         get() = when (status) {
-            "CONNECTED" -> "En línea"
+            "CONNECTED" -> "Conectado"
             "CONNECTING" -> "Conectando"
             else -> "Sin enlace"
         }
@@ -99,16 +102,6 @@ internal data class WidgetSnapshot(
             "CONNECTING" -> Color(0xFFF59E0B)
             else -> Color(0xFFEF4444)
         }
-    val healthPct: String
-        get() = when (status) {
-            "CONNECTED" -> "99.8%"
-            "CONNECTING" -> "68%"
-            else -> "--"
-        }
-    val filesLabel: String
-        get() = if (synced <= 0) "—" else "%,d".format(synced)
-    val eventsLabel: String
-        get() = (pending + synced).coerceAtMost(99).toString()
 
     companion object {
         suspend fun load(context: Context): WidgetSnapshot {
@@ -135,8 +128,7 @@ internal data class WidgetSnapshot(
                         it.status == SyncStatus.RECEIVED ||
                         it.status == SyncStatus.ACKNOWLEDGED
                 }
-            } catch (_: Exception) {
-            }
+            } catch (_: Exception) {}
             val latency = try {
                 SyncRepository(context).latencyMs.value
             } catch (_: Exception) {
@@ -148,9 +140,9 @@ internal data class WidgetSnapshot(
                 time = SimpleDateFormat("H:mm", locale).format(cal.time),
                 dateShort = SimpleDateFormat("EEE, d MMM", locale).format(cal.time)
                     .replaceFirstChar { it.uppercase() },
-                dateLong = SimpleDateFormat("EEEE, d 'de' MMMM", locale).format(cal.time)
+                dateLong = SimpleDateFormat("EEE, d 'de' MMMM", locale).format(cal.time)
                     .replaceFirstChar { it.uppercase() },
-                device = Build.MODEL ?: "Xiaomi 2312",
+                device = "Xiaomi 2312",
                 latency = if (latency != null) "$latency ms" else "12 ms",
                 pending = pending,
                 synced = synced
@@ -176,9 +168,13 @@ private fun GlanceModifier.widgetChrome(): GlanceModifier =
         .cornerRadius(24.dp)
         .padding(12.dp)
 
+/**
+ * 1x1 Compact Widget: Solo Reloj + Logo + Fecha (media_1789632468509.jpg)
+ */
 @Suppress("RestrictedApi")
 @Composable
 private fun CompactClock(state: WidgetSnapshot, open: Action) {
+    val context = LocalContext.current
     Column(
         modifier = GlanceModifier.widgetChrome().clickable(open),
         verticalAlignment = Alignment.CenterVertically,
@@ -187,244 +183,176 @@ private fun CompactClock(state: WidgetSnapshot, open: Action) {
         Image(
             provider = ImageProvider(R.drawable.sync_engine_mark),
             contentDescription = "Sync Engine",
-            modifier = GlanceModifier.size(26.dp)
+            modifier = GlanceModifier.size(24.dp)
         )
-        Spacer(GlanceModifier.height(4.dp))
-        Text(
-            text = state.time,
-            style = TextStyle(
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = ColorProvider(Color.White),
-                textAlign = TextAlign.Center
-            )
-        )
-        Text(
-            text = state.dateShort,
-            style = TextStyle(fontSize = 9.sp, color = ColorProvider(Color(0xFF94A3B8)))
+        Spacer(GlanceModifier.height(2.dp))
+        AndroidRemoteViews(
+            remoteViews = RemoteViews(context.packageName, R.layout.widget_clock_compact),
+            modifier = GlanceModifier.fillMaxWidth()
         )
     }
 }
 
 /**
- * 2x2 Widget: Estado del dispositivo (matches exact right mockup 2x2)
+ * 2x2 Medium Widget: Reloj Central + Estado Esencial (media_1789632468509.jpg)
  */
 @Suppress("RestrictedApi")
 @Composable
 private fun MediumStatus(state: WidgetSnapshot, open: Action) {
+    val context = LocalContext.current
     Column(
         modifier = GlanceModifier.widgetChrome().clickable(open),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalAlignment = Alignment.Start
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Row(
-            modifier = GlanceModifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Image(
-                provider = ImageProvider(R.drawable.sync_engine_mark),
-                contentDescription = "Sync Engine",
-                modifier = GlanceModifier.size(28.dp)
-            )
-            Spacer(modifier = GlanceModifier.width(8.dp))
-            Column {
-                Text(
-                    text = "SYNC ENGINE",
-                    style = TextStyle(
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = ColorProvider(Color.White)
-                    )
-                )
-                Text(
-                    text = "BARRANTES CO.",
-                    style = TextStyle(
-                        fontSize = 8.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = ColorProvider(Color(0xFF00BFFF))
-                    )
-                )
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = "● ",
-                        style = TextStyle(fontSize = 9.sp, color = ColorProvider(state.statusColor))
-                    )
-                    Text(
-                        text = state.statusLabel,
-                        style = TextStyle(fontSize = 10.sp, color = ColorProvider(Color(0xFFCBD5E1)))
-                    )
-                }
-            }
-        }
+        // Logo superior
+        Image(
+            provider = ImageProvider(R.drawable.sync_engine_mark),
+            contentDescription = "Sync Engine",
+            modifier = GlanceModifier.size(26.dp)
+        )
 
-        Spacer(modifier = GlanceModifier.height(8.dp))
-        Text(
-            text = state.latency,
-            style = TextStyle(
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium,
-                color = ColorProvider(Color(0xFF94A3B8))
-            )
+        Spacer(modifier = GlanceModifier.height(2.dp))
+
+        // Reloj central nativo sincronizado (reloj 32sp + fecha corta)
+        AndroidRemoteViews(
+            remoteViews = RemoteViews(context.packageName, R.layout.widget_clock_medium),
+            modifier = GlanceModifier.fillMaxWidth()
         )
 
         Spacer(modifier = GlanceModifier.height(4.dp))
-        Image(
-            provider = ImageProvider(R.drawable.laptop_hero),
-            contentDescription = "Laptop",
-            modifier = GlanceModifier.fillMaxWidth().height(65.dp)
-        )
+
+        // Estado esencial inferior: ● Conectado · 12 ms
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = "● ",
+                style = TextStyle(fontSize = 8.sp, color = ColorProvider(state.statusColor))
+            )
+            Text(
+                text = if (state.status == "CONNECTED") "Conectado · ${state.latency}" else state.statusLabel,
+                style = TextStyle(
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = ColorProvider(Color(0xFFCBD5E1))
+                )
+            )
+        }
     }
 }
 
 /**
- * 4x2 Large Hero Widget (matches exact right mockup top widget)
+ * 4x2 Large Hero Widget: Reloj Monumental, Estado y Acciones (Exacto a media_1789632468509.jpg)
  */
 @Suppress("RestrictedApi")
 @Composable
 private fun LargeHero(state: WidgetSnapshot, open: Action) {
-    Column(
-        modifier = GlanceModifier.widgetChrome().clickable(open)
+    val context = LocalContext.current
+    Row(
+        modifier = GlanceModifier.widgetChrome().clickable(open),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        // Top Row: Logo + Status on Left, Laptop + Name on Right
-        Row(
-            modifier = GlanceModifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+        // Columna Izquierda: Logo SO en Gran Formato
+        Column(
+            modifier = GlanceModifier.padding(horizontal = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Image(
                 provider = ImageProvider(R.drawable.sync_engine_mark),
                 contentDescription = "Sync Engine",
-                modifier = GlanceModifier.size(34.dp)
+                modifier = GlanceModifier.size(54.dp)
             )
-            Spacer(modifier = GlanceModifier.width(8.dp))
-            Column {
-                Text(
-                    text = "SYNC ENGINE",
-                    style = TextStyle(
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = ColorProvider(Color.White)
-                    )
-                )
-                Text(
-                    text = "BARRANTES CO.",
-                    style = TextStyle(
-                        fontSize = 8.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = ColorProvider(Color(0xFF00BFFF))
-                    )
-                )
-                Row(verticalAlignment = Alignment.CenterVertically) {
+        }
+
+        Spacer(modifier = GlanceModifier.width(6.dp))
+
+        // Columna Central: Reloj Monumental (Fecha arriba + Hora 44sp) + Fila de Estado y Acciones
+        Column(
+            modifier = GlanceModifier.defaultWeight(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Reloj nativo sincronizado con el sistema Android
+            AndroidRemoteViews(
+                remoteViews = RemoteViews(context.packageName, R.layout.widget_clock_center),
+                modifier = GlanceModifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = GlanceModifier.height(4.dp))
+
+            // Fila Inferior: [● Xiaomi 2312 ● Conectado] | [🔄] [📋] [•••]
+            Row(
+                modifier = GlanceModifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Estado de dispositivo
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = GlanceModifier.defaultWeight()
+                ) {
                     Text(
                         text = "● ",
-                        style = TextStyle(fontSize = 9.sp, color = ColorProvider(state.statusColor))
+                        style = TextStyle(fontSize = 8.sp, color = ColorProvider(state.statusColor))
                     )
                     Text(
-                        text = state.statusLabel,
-                        style = TextStyle(fontSize = 11.sp, color = ColorProvider(Color(0xFFCBD5E1)))
+                        text = state.device,
+                        style = TextStyle(fontSize = 10.sp, fontWeight = FontWeight.Bold, color = ColorProvider(Color.White))
+                    )
+                    Spacer(modifier = GlanceModifier.width(4.dp))
+                    Text(
+                        text = "● ${if (state.status == "CONNECTED") "Conectado" else state.statusLabel}",
+                        style = TextStyle(
+                            fontSize = 10.sp,
+                            color = ColorProvider(if (state.status == "CONNECTED") Color(0xFF10B981) else Color(0xFFCBD5E1))
+                        )
+                    )
+                }
+
+                // Acciones rápidas circulares / cápsulas
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    WidgetIconBtn(
+                        symbol = "🔄",
+                        onClick = actionRunCallback<ManualSyncAction>()
+                    )
+                    Spacer(modifier = GlanceModifier.width(6.dp))
+                    WidgetIconBtn(
+                        symbol = "📋",
+                        onClick = actionStartActivity(openAppIntent("activity"))
+                    )
+                    Spacer(modifier = GlanceModifier.width(6.dp))
+                    WidgetIconBtn(
+                        symbol = "•••",
+                        onClick = actionStartActivity(openAppIntent("devices"))
                     )
                 }
             }
+        }
+    }
+}
 
-            Spacer(modifier = GlanceModifier.width(8.dp).defaultWeight())
-
-            Image(
-                provider = ImageProvider(R.drawable.laptop_hero),
-                contentDescription = "Laptop",
-                modifier = GlanceModifier.size(46.dp)
+@Composable
+private fun WidgetIconBtn(
+    symbol: String,
+    onClick: Action
+) {
+    Column(
+        modifier = GlanceModifier
+            .size(28.dp)
+            .background(ImageProvider(R.drawable.widget_tile_bg))
+            .cornerRadius(8.dp)
+            .clickable(onClick),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = symbol,
+            style = TextStyle(
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = ColorProvider(Color(0xFF00BFFF)),
+                textAlign = TextAlign.Center
             )
-            Spacer(modifier = GlanceModifier.width(6.dp))
-            Column {
-                Text(
-                    text = state.device,
-                    style = TextStyle(
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = ColorProvider(Color.White)
-                    )
-                )
-                Text(
-                    text = "${state.latency} · Wi-Fi",
-                    style = TextStyle(fontSize = 10.sp, color = ColorProvider(Color(0xFF94A3B8)))
-                )
-            }
-        }
-
-        Spacer(modifier = GlanceModifier.height(14.dp))
-
-        // Bottom Row: 3 Stats (Sync 99.8%, Eventos hoy 24, Archivos 1,842)
-        Row(
-            modifier = GlanceModifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Stat 1: Sync 99.8%
-            Column(modifier = GlanceModifier.defaultWeight()) {
-                Text(
-                    text = "Sync",
-                    style = TextStyle(fontSize = 9.sp, color = ColorProvider(Color(0xFF94A3B8)))
-                )
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = state.healthPct,
-                        style = TextStyle(
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = ColorProvider(Color.White)
-                        )
-                    )
-                    Spacer(modifier = GlanceModifier.width(4.dp))
-                    Text(
-                        text = "○",
-                        style = TextStyle(fontSize = 13.sp, color = ColorProvider(Color(0xFF10B981)))
-                    )
-                }
-            }
-
-            // Stat 2: Eventos hoy 24
-            Column(modifier = GlanceModifier.defaultWeight()) {
-                Text(
-                    text = "Eventos hoy",
-                    style = TextStyle(fontSize = 9.sp, color = ColorProvider(Color(0xFF94A3B8)))
-                )
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = state.eventsLabel,
-                        style = TextStyle(
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = ColorProvider(Color.White)
-                        )
-                    )
-                    Spacer(modifier = GlanceModifier.width(4.dp))
-                    Text(
-                        text = "ıll",
-                        style = TextStyle(fontSize = 13.sp, color = ColorProvider(Color(0xFF00BFFF)))
-                    )
-                }
-            }
-
-            // Stat 3: Archivos 1,842
-            Column(modifier = GlanceModifier.defaultWeight()) {
-                Text(
-                    text = "Archivos",
-                    style = TextStyle(fontSize = 9.sp, color = ColorProvider(Color(0xFF94A3B8)))
-                )
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = state.filesLabel,
-                        style = TextStyle(
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = ColorProvider(Color.White)
-                        )
-                    )
-                    Spacer(modifier = GlanceModifier.width(4.dp))
-                    Text(
-                        text = "〰",
-                        style = TextStyle(fontSize = 13.sp, color = ColorProvider(Color(0xFF007AFF)))
-                    )
-                }
-            }
-        }
+        )
     }
 }
 
@@ -438,8 +366,7 @@ class ManualSyncAction : ActionCallback {
             SyncRepository(context).triggerManualSync()
             SyncGlanceWidget.updateAll(context)
             ActionsGlanceWidget.updateAll(context)
-        } catch (_: Exception) {
-        }
+        } catch (_: Exception) {}
     }
 }
 
@@ -451,8 +378,7 @@ class LockPcAction : ActionCallback {
     ) {
         try {
             SyncRepository(context).lockScreen()
-        } catch (_: Exception) {
-        }
+        } catch (_: Exception) {}
     }
 }
 

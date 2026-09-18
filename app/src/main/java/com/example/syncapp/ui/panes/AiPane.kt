@@ -1,404 +1,398 @@
 package com.example.syncapp.ui.panes
 
+import android.widget.Toast
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.AutoAwesome
-import androidx.compose.material.icons.outlined.Check
-import androidx.compose.material.icons.outlined.ContentCopy
-import androidx.compose.material.icons.outlined.Edit
-import androidx.compose.material.icons.outlined.ListAlt
-import androidx.compose.material.icons.outlined.Refresh
-import androidx.compose.material.icons.outlined.Send
-import androidx.compose.material.icons.outlined.Translate
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.outlined.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.sync.ai.AiContextAction
 import com.example.sync.ai.GeminiClient
-import com.example.syncapp.ui.components.SectionHeader
-import com.example.syncapp.ui.theme.DesignTokens
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AiPane(
     geminiClient: GeminiClient,
-    initialContextText: String = "",
-    onCopyResult: (String) -> Unit,
-    onSendToPc: (String) -> Unit,
+    onCopyResult: (String) -> Unit = {},
+    onSendToPc: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    var contextText by remember(initialContextText) { mutableStateOf(initialContextText) }
-    var userQuery by remember { mutableStateOf("") }
-    var selectedAction by remember { mutableStateOf<AiContextAction?>(null) }
-    var isGenerating by remember { mutableStateOf(false) }
-    var resultText by remember { mutableStateOf<String?>(null) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    fun runAction(action: AiContextAction) {
-        if (contextText.isBlank()) {
-            errorMessage = "Ingresa o pega un texto antes de ejecutar una acción IA."
-            return
-        }
-        selectedAction = action
+    val bgDark = Color(0xFF050811)
+    val textWhite = Color(0xFFFFFFFF)
+    val textMuted = Color(0xFF94A3B8)
+    val textCyan = Color(0xFF00BFFF)
+    val cardBg = Color(0xFF0D1527)
+    val cardBorder = Color(0x2800BFFF)
+    val orbBlue = Color(0xFF0284C7)
+
+    var queryInput by remember { mutableStateOf("") }
+    var isGenerating by remember { mutableStateOf(false) }
+    var responseText by remember { mutableStateOf<String?>(null) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    // Pulsing Orb Animation
+    val infiniteTransition = rememberInfiniteTransition(label = "orbGlow")
+    val orbScale by infiniteTransition.animateFloat(
+        initialValue = 0.96f,
+        targetValue = 1.04f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2200, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "orbScale"
+    )
+
+    fun executeQuery(prompt: String, action: AiContextAction? = null) {
+        if (prompt.isBlank()) return
         isGenerating = true
         errorMessage = null
-        resultText = null
+        responseText = null
 
         scope.launch {
-            val res = geminiClient.executeAction(action, contextText, userQuery.ifBlank { null })
+            val res = geminiClient.executeAction(action ?: AiContextAction.IMPROVE, prompt, null)
             isGenerating = false
             res.onSuccess { text ->
-                resultText = text
+                responseText = text
             }.onFailure { err ->
-                errorMessage = err.message ?: "Error al procesar con Gemini"
+                errorMessage = err.message ?: "No se pudo conectar con Gemini AI"
             }
         }
     }
 
-    Column(
+    Box(
         modifier = modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .background(bgDark)
     ) {
-        // Header
-        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text("IA Contextual", color = DesignTokens.TextPrimary, fontSize = 24.sp, fontWeight = FontWeight.Bold)
-            Text("Asistencia inteligente sobre tu contexto y portapapeles con Gemini.", color = DesignTokens.TextSecondary, fontSize = 13.sp)
-        }
-
-        // Context Input Card
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = DesignTokens.ShapeMedium,
-            colors = CardDefaults.cardColors(containerColor = DesignTokens.SurfaceWhite),
-            border = BorderStroke(1.dp, DesignTokens.SurfaceBorder),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+            // 1. TOP BAR: [IA Assist] | [⋮]
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
+                Column {
                     Text(
-                        "Contenido de Trabajo",
-                        color = DesignTokens.TextPrimary,
-                        fontSize = 14.sp,
+                        text = "IA Assist",
+                        color = textWhite,
+                        fontSize = 24.sp,
                         fontWeight = FontWeight.Bold
                     )
-                    if (contextText.isNotBlank()) {
-                        Text(
-                            text = "Limpiar",
-                            color = DesignTokens.TextMuted,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier.padding(4.dp)
-                        )
-                    }
+                    Text(
+                        text = "Tu contexto, más inteligente.",
+                        color = textMuted,
+                        fontSize = 13.sp
+                    )
                 }
 
-                OutlinedTextField(
-                    value = contextText,
-                    onValueChange = { contextText = it },
-                    modifier = Modifier.fillMaxWidth().height(120.dp),
-                    placeholder = { Text("Pega un artículo, código, mensaje o resumen aquí...", color = DesignTokens.TextMuted, fontSize = 13.sp) },
-                    shape = DesignTokens.ShapeSmall,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = DesignTokens.ElectricBlue,
-                        unfocusedBorderColor = DesignTokens.SurfaceBorder,
-                        focusedContainerColor = DesignTokens.SurfaceSubtle,
-                        unfocusedContainerColor = DesignTokens.SurfaceSubtle
+                IconButton(onClick = { Toast.makeText(context, "Ajustes de Gemini AI", Toast.LENGTH_SHORT).show() }) {
+                    Icon(
+                        Icons.Outlined.MoreVert,
+                        contentDescription = "Opciones",
+                        tint = textMuted,
+                        modifier = Modifier.size(22.dp)
                     )
+                }
+            }
+
+            // 2. CENTRAL GLOWING BLUE ORB (Exact match to Screen 5)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(180.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                // Radial outer atmospheric glow
+                Box(
+                    modifier = Modifier
+                        .size(170.dp)
+                        .scale(orbScale)
+                        .clip(CircleShape)
+                        .background(
+                            Brush.radialGradient(
+                                listOf(
+                                    orbBlue.copy(alpha = 0.35f),
+                                    textCyan.copy(alpha = 0.15f),
+                                    Color.Transparent
+                                )
+                            )
+                        )
                 )
 
-                OutlinedTextField(
-                    value = userQuery,
-                    onValueChange = { userQuery = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Instrucción opcional (ej. 'En 3 puntos', 'A inglés')...", color = DesignTokens.TextMuted, fontSize = 12.sp) },
-                    singleLine = true,
-                    shape = DesignTokens.ShapeSmall,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = DesignTokens.ElectricBlue,
-                        unfocusedBorderColor = DesignTokens.SurfaceBorder,
-                        focusedContainerColor = DesignTokens.SurfaceSubtle,
-                        unfocusedContainerColor = DesignTokens.SurfaceSubtle
-                    )
+                // The glowing blue Orb
+                Box(
+                    modifier = Modifier
+                        .size(100.dp)
+                        .scale(orbScale)
+                        .clip(CircleShape)
+                        .background(
+                            Brush.radialGradient(
+                                listOf(
+                                    Color(0xFF67E8F9),
+                                    Color(0xFF0284C7),
+                                    Color(0xFF0369A1),
+                                    Color(0xFF0B1220)
+                                )
+                            )
+                        )
+                        .border(1.dp, Color(0x6638BDF8), CircleShape)
                 )
             }
-        }
 
-        // 5 Contextual Actions (No generic chat)
-        SectionHeader(title = "Acciones Contextuales")
-
-        FlowRow(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            AiActionTile(
-                title = "Resumir",
-                icon = Icons.Outlined.AutoAwesome,
-                isSelected = selectedAction == AiContextAction.SUMMARIZE,
-                enabled = !isGenerating,
-                onClick = { runAction(AiContextAction.SUMMARIZE) },
-                modifier = Modifier.weight(1f)
-            )
-            AiActionTile(
-                title = "Traducir",
-                icon = Icons.Outlined.Translate,
-                isSelected = selectedAction == AiContextAction.TRANSLATE,
-                enabled = !isGenerating,
-                onClick = { runAction(AiContextAction.TRANSLATE) },
-                modifier = Modifier.weight(1f)
-            )
-            AiActionTile(
-                title = "Corregir",
-                icon = Icons.Outlined.Check,
-                isSelected = selectedAction == AiContextAction.CORRECT,
-                enabled = !isGenerating,
-                onClick = { runAction(AiContextAction.CORRECT) },
-                modifier = Modifier.weight(1f)
-            )
-            AiActionTile(
-                title = "Acciones",
-                icon = Icons.Outlined.ListAlt,
-                isSelected = selectedAction == AiContextAction.EXTRACT_ACTIONS,
-                enabled = !isGenerating,
-                onClick = { runAction(AiContextAction.EXTRACT_ACTIONS) },
-                modifier = Modifier.weight(1f)
-            )
-            AiActionTile(
-                title = "Mejorar",
-                icon = Icons.Outlined.Edit,
-                isSelected = selectedAction == AiContextAction.IMPROVE,
-                enabled = !isGenerating,
-                onClick = { runAction(AiContextAction.IMPROVE) },
-                modifier = Modifier.weight(1f)
-            )
-        }
-
-        // Loading State
-        if (isGenerating) {
-            Card(
+            // 3. 2x2 ACTION CARDS: [Resumir] [Traducir] [Extraer acciones] [Mejorar texto]
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                shape = DesignTokens.ShapeMedium,
-                colors = CardDefaults.cardColors(containerColor = DesignTokens.SurfaceWhite),
-                border = BorderStroke(1.dp, DesignTokens.SurfaceBorder)
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                AiActionCard(
+                    icon = Icons.Outlined.Description,
+                    title = "Resumir",
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        executeQuery("Resume el contenido de forma concisa y ejecutiva.", AiContextAction.SUMMARIZE)
+                    }
+                )
+                AiActionCard(
+                    icon = Icons.Outlined.Translate,
+                    title = "Traducir",
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        executeQuery("Traduce el texto seleccionado al inglés con tono profesional.", AiContextAction.TRANSLATE)
+                    }
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                AiActionCard(
+                    icon = Icons.Outlined.Checklist,
+                    title = "Extraer acciones",
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        executeQuery("Extrae las tareas y pendientes accionables en una lista clara con viñetas.", AiContextAction.EXTRACT_ACTIONS)
+                    }
+                )
+                AiActionCard(
+                    icon = Icons.Outlined.AutoAwesome,
+                    title = "Mejorar texto",
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        executeQuery("Mejora la redacción haciéndola más elegante, profesional y directa.", AiContextAction.IMPROVE)
+                    }
+                )
+            }
+
+            // 4. INPUT FIELD: "Pregunta algo..." with blue send button ➔
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(cardBg)
+                    .border(1.dp, cardBorder, RoundedCornerShape(14.dp))
+                    .padding(horizontal = 14.dp, vertical = 6.dp)
             ) {
                 Row(
-                    modifier = Modifier.padding(20.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        strokeWidth = 2.5.dp,
-                        color = DesignTokens.ElectricBlue
+                    OutlinedTextField(
+                        value = queryInput,
+                        onValueChange = { queryInput = it },
+                        placeholder = { Text("Pregunta algo...", color = textMuted, fontSize = 14.sp) },
+                        modifier = Modifier.weight(1f),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = textWhite,
+                            unfocusedTextColor = textWhite,
+                            focusedBorderColor = Color.Transparent,
+                            unfocusedBorderColor = Color.Transparent
+                        ),
+                        singleLine = true
                     )
-                    Column {
-                        Text(
-                            text = "Procesando con Gemini...",
-                            color = DesignTokens.TextPrimary,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = "Aplicando acción ${selectedAction?.displayName ?: ""}",
-                            color = DesignTokens.TextSecondary,
-                            fontSize = 11.sp
+
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFF007AFF))
+                            .clickable {
+                                if (queryInput.isNotBlank()) {
+                                    val q = queryInput
+                                    queryInput = ""
+                                    executeQuery(q)
+                                }
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Outlined.ArrowForward,
+                            contentDescription = "Enviar",
+                            tint = textWhite,
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                 }
             }
-        }
 
-        // Error Banner
-        if (errorMessage != null) {
-            Surface(
-                shape = DesignTokens.ShapeMedium,
-                color = DesignTokens.StatusDisconnected.copy(alpha = 0.08f),
-                border = BorderStroke(1.dp, DesignTokens.StatusDisconnected.copy(alpha = 0.3f)),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = errorMessage ?: "",
-                    color = DesignTokens.StatusDisconnected,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier.padding(14.dp)
-                )
+            // Loading state or result
+            if (isGenerating) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(8.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = textCyan, strokeWidth = 2.dp)
+                    Spacer(Modifier.width(10.dp))
+                    Text("Procesando con Gemini AI...", color = textCyan, fontSize = 12.sp)
+                }
             }
-        }
 
-        // Result Card
-        if (resultText != null) {
-            Card(
+            if (responseText != null) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(Color(0xFF0F172A))
+                        .border(1.dp, Color(0x3300BFFF), RoundedCornerShape(14.dp))
+                        .padding(14.dp)
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Respuesta de IA Assist:", color = textCyan, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text(responseText!!, color = textWhite, fontSize = 13.sp)
+                    }
+                }
+            }
+
+            if (errorMessage != null) {
+                Text(errorMessage!!, color = Color(0xFFEF4444), fontSize = 12.sp)
+            }
+
+            // 5. SUGERENCIAS LIST (Exact match to Screen 5)
+            Text(
+                text = "Sugerencias",
+                color = textWhite,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold
+            )
+
+            Column(
                 modifier = Modifier.fillMaxWidth(),
-                shape = DesignTokens.ShapeMedium,
-                colors = CardDefaults.cardColors(containerColor = DesignTokens.SurfaceWhite),
-                border = BorderStroke(1.dp, DesignTokens.SurfaceBorder),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Surface(
-                            shape = DesignTokens.ShapePill,
-                            color = DesignTokens.VioletAccent.copy(alpha = 0.12f),
-                            border = BorderStroke(1.dp, DesignTokens.VioletAccent.copy(alpha = 0.3f))
-                        ) {
-                            Text(
-                                text = "RESULTADO IA",
-                                color = DesignTokens.VioletAccent,
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                            )
-                        }
-
-                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            IconButton(
-                                onClick = { onCopyResult(resultText ?: "") },
-                                modifier = Modifier.size(32.dp)
-                            ) {
-                                Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar", tint = DesignTokens.TextSecondary, modifier = Modifier.size(16.dp))
-                            }
-                            IconButton(
-                                onClick = { onSendToPc(resultText ?: "") },
-                                modifier = Modifier.size(32.dp)
-                            ) {
-                                Icon(Icons.Outlined.Send, contentDescription = "Enviar a laptop", tint = DesignTokens.ElectricBlue, modifier = Modifier.size(16.dp))
-                            }
-                        }
-                    }
-
-                    Text(
-                        text = resultText ?: "",
-                        color = DesignTokens.TextPrimary,
-                        fontSize = 13.sp,
-                        lineHeight = 20.sp
-                    )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Button(
-                            onClick = { onSendToPc(resultText ?: "") },
-                            modifier = Modifier.weight(1f).height(42.dp),
-                            shape = DesignTokens.ShapeSmall,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = DesignTokens.ElectricBlue,
-                                contentColor = Color.White
-                            )
-                        ) {
-                            Icon(Icons.Outlined.Send, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(6.dp))
-                            Text("Enviar a Laptop", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                        }
-
-                        Button(
-                            onClick = { selectedAction?.let { runAction(it) } },
-                            modifier = Modifier.height(42.dp),
-                            shape = DesignTokens.ShapeSmall,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = DesignTokens.SurfaceSubtle,
-                                contentColor = DesignTokens.TextPrimary
-                            )
-                        ) {
-                            Icon(Icons.Outlined.Refresh, contentDescription = "Reintentar", modifier = Modifier.size(16.dp))
-                        }
-                    }
+                AiSuggestionRow(Icons.Outlined.Description, "Resume mi último documento") {
+                    executeQuery("Resume mi último documento guardado.", AiContextAction.SUMMARIZE)
+                }
+                AiSuggestionRow(Icons.Outlined.Checklist, "Extrae tareas de esta nota") {
+                    executeQuery("Extrae tareas de esta nota.", AiContextAction.EXTRACT_ACTIONS)
+                }
+                AiSuggestionRow(Icons.Outlined.Language, "Traduce este texto") {
+                    executeQuery("Traduce este texto al español neutral.", AiContextAction.TRANSLATE)
                 }
             }
-        }
 
-        Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(16.dp))
+        }
     }
 }
 
 @Composable
-private fun AiActionTile(
-    title: String,
+private fun AiActionCard(
     icon: ImageVector,
-    isSelected: Boolean,
-    enabled: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    title: String,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
 ) {
-    val bg = if (isSelected) DesignTokens.VioletAccent.copy(alpha = 0.12f) else DesignTokens.SurfaceWhite
-    val border = if (isSelected) DesignTokens.VioletAccent else DesignTokens.SurfaceBorder
-    val tint = if (isSelected) DesignTokens.VioletAccent else DesignTokens.TextPrimary
-
-    Card(
+    Box(
         modifier = modifier
-            .clickable(enabled = enabled, onClick = onClick),
-        shape = DesignTokens.ShapeMedium,
-        colors = CardDefaults.cardColors(containerColor = bg),
-        border = BorderStroke(1.dp, border),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+            .height(56.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(Color(0xFF0D1527))
+            .border(1.dp, Color(0x2600BFFF), RoundedCornerShape(14.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp),
+        contentAlignment = Alignment.CenterStart
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 12.dp, horizontal = 6.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Icon(icon, contentDescription = title, tint = tint, modifier = Modifier.size(20.dp))
-            Spacer(Modifier.height(6.dp))
-            Text(title, color = tint, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            Icon(
+                imageVector = icon,
+                contentDescription = title,
+                tint = Color(0xFF00BFFF),
+                modifier = Modifier.size(20.dp)
+            )
+            Text(
+                text = title,
+                color = Color.White,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+    }
+}
+
+@Composable
+private fun AiSuggestionRow(
+    icon: ImageVector,
+    text: String,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color(0xFF0D1527))
+            .border(1.dp, Color(0x1A00BFFF), RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 12.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = Color(0xFF00BFFF),
+                modifier = Modifier.size(18.dp)
+            )
+            Text(
+                text = text,
+                color = Color.White,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium
+            )
         }
     }
 }

@@ -1,0 +1,48 @@
+name: ⚡ Sync Engine - Autonomous Build & Deploy
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  # COMPILAR ANDROID Y SUBIR A DRIVE
+  build-android:
+    name: Build and Deploy Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+          cache: 'gradle'
+      - run: chmod +x ./gradlew
+      - run: ./gradlew assembleRelease
+      - uses: adityasshari/google-drive-upload-git-action@v2
+        with:
+          credentials: ${{ secrets.GDRIVE_CREDENTIALS }}
+          filename: app/build/outputs/apk/release/*.apk
+          folderId: ${{ secrets.GDRIVE_FOLDER_ID }}
+          overwrite: "true"
+
+  # COMPILAR WINDOWS Y SUBIR A DRIVE
+  build-desktop:
+    name: Build and Deploy Windows Desktop Daemon
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm install
+      - run: npx electron-builder --win --x64
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: adityasshari/google-drive-upload-git-action@v2
+        with:
+          credentials: ${{ secrets.GDRIVE_CREDENTIALS }}
+          filename: dist/*.exe
+          folderId: ${{ secrets.GDRIVE_FOLDER_ID }}
+          overwrite: "true"

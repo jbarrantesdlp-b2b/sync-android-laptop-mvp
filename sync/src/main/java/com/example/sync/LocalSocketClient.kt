@@ -1,4 +1,4 @@
-﻿package com.example.sync
+package com.example.sync
 
 import kotlinx.coroutines.*
 import okhttp3.*
@@ -45,6 +45,7 @@ class LocalSocketClient(
             }
 
             override fun onFailure(ws: WebSocket, t: Throwable, response: Response?) {
+                android.util.Log.w("LocalSocketClient", "Connection error ($url): ${t.message}")
                 isConnected = false
                 scope.launch {
                     onDisconnected()

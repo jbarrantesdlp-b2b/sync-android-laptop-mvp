@@ -1,11 +1,19 @@
 const { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, shell } = require('electron');
 const path = require('path');
+const fs = require('fs');
 const http = require('http');
 const WebSocket = require('ws');
 const { exec } = require('child_process');
 const os = require('os');
 const qrcode = require('qrcode-terminal');
 const { startDiscovery } = require('./discovery');
+
+process.on('uncaughtException', (err) => {
+  console.error('[Sync Engine Uncaught]:', err);
+});
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[Sync Engine Unhandled Rejection]:', reason);
+});
 
 const PORT = 8123;
 const LIVE_TYPES = new Set(['IOT_TELEMETRY', 'HARDWARE_TELEMETRY', 'PING', 'PONG', 'CONNECTION_STATE', 'COMMAND_ACK']);
@@ -173,11 +181,54 @@ function executeCommand(type, payload) {
         const text = payload.text;
         const clean = text.replace(/"/g, '`"');
         exec(`powershell -c "Set-Clipboard -Value \\"${clean}\\""`);
+        if (mainWindow) {
+          mainWindow.webContents.send('clipboard-received', { text });
+        }
         if (text.startsWith('http://') || text.startsWith('https://')) {
           shell.openExternal(text);
         }
       }
       break;
+
+    case 'SAVE_NOTE': {
+      try {
+        const notesDir = path.join(os.homedir(), 'Desktop');
+        const notesFile = path.join(notesDir, 'Notas_SyncEngine.txt');
+        const noteContent = (payload && (payload.text || payload.content)) || (typeof payload === 'string' ? payload : '');
+        const timeStr = new Date().toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'medium' });
+        const entry = `\n========================================\n[${timeStr}] NOTA DESDE CELULAR:\n${noteContent}\n========================================\n`;
+        fs.appendFileSync(notesFile, entry, 'utf8');
+        console.log(`[Sync Engine] Nota guardada en: ${notesFile}`);
+        if (mainWindow) {
+          mainWindow.webContents.send('note-received', { text: noteContent, time: timeStr });
+          mainWindow.webContents.send('log-message', { type: 'data', message: `Nota guardada en Desktop: ${noteContent.slice(0, 50)}...` });
+        }
+      } catch (err) {
+        console.error('[Sync Engine] Error guardando nota:', err);
+      }
+      break;
+    }
+
+    case 'OPEN_DOWNLOADS': {
+      const dl = path.join(os.homedir(), 'Downloads');
+      shell.openPath(dl);
+      break;
+    }
+
+    case 'OPEN_NOTEPAD': {
+      const notesFile = path.join(os.homedir(), 'Desktop', 'Notas_SyncEngine.txt');
+      if (!fs.existsSync(notesFile)) {
+        fs.writeFileSync(notesFile, '=== NOTAS SYNC ENGINE BY BARRANTES CO. ===\n', 'utf8');
+      }
+      exec(`notepad.exe "${notesFile}"`);
+      break;
+    }
+
+    case 'OPEN_EXPLORER': {
+      const target = (payload && payload.path) ? payload.path : os.homedir();
+      shell.openPath(target);
+      break;
+    }
   }
 }
 
@@ -340,11 +391,121 @@ function startServer() {
       return;
     }
 
+    if (req.method === 'GET' && req.url.startsWith('/api/fs/list')) {
+      try {
+        const u = new URL(req.url, `http://${req.headers.host}`);
+        let reqPath = u.searchParams.get('path');
+        let targetDir = (!reqPath || reqPath === '/' || reqPath === '') ? os.homedir() : path.resolve(reqPath);
+        if (!fs.existsSync(targetDir)) {
+          res.writeHead(404, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Directorio no encontrado' }));
+          return;
+        }
+        const entries = fs.readdirSync(targetDir, { withFileTypes: true });
+        const items = [];
+        for (const e of entries) {
+          try {
+            const fullPath = path.join(targetDir, e.name);
+            let size = 0;
+            let mtime = Date.now();
+            try {
+              const st = fs.statSync(fullPath);
+              size = st.size;
+              mtime = st.mtimeMs;
+            } catch (_e) {}
+            items.push({
+              name: e.name,
+              path: fullPath,
+              isDirectory: e.isDirectory(),
+              sizeBytes: size,
+              modifiedAt: mtime
+            });
+          } catch (_e) {}
+        }
+        items.sort((a, b) => {
+          if (a.isDirectory && !b.isDirectory) return -1;
+          if (!a.isDirectory && b.isDirectory) return 1;
+          return a.name.localeCompare(b.name);
+        });
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          currentPath: targetDir,
+          parentPath: path.dirname(targetDir),
+          homeDir: os.homedir(),
+          items: items.slice(0, 300)
+        }));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+      return;
+    }
+
+    if (req.method === 'GET' && req.url.startsWith('/api/fs/download')) {
+      try {
+        const u = new URL(req.url, `http://${req.headers.host}`);
+        const filePath = u.searchParams.get('path');
+        if (!filePath || !fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
+          res.writeHead(404, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Archivo no encontrado' }));
+          return;
+        }
+        const stat = fs.statSync(filePath);
+        res.writeHead(200, {
+          'Content-Type': 'application/octet-stream',
+          'Content-Length': stat.size,
+          'Content-Disposition': `attachment; filename="${encodeURIComponent(path.basename(filePath))}"`
+        });
+        fs.createReadStream(filePath).pipe(res);
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+      return;
+    }
+
+    if (req.method === 'POST' && req.url.startsWith('/api/fs/upload')) {
+      try {
+        const u = new URL(req.url, `http://${req.headers.host}`);
+        const fileName = u.searchParams.get('name') || `archivo_${Date.now()}.bin`;
+        const targetFolder = u.searchParams.get('folder') || path.join(os.homedir(), 'Downloads');
+        if (!fs.existsSync(targetFolder)) {
+          fs.mkdirSync(targetFolder, { recursive: true });
+        }
+        const destPath = path.join(targetFolder, path.basename(fileName));
+        const fileStream = fs.createWriteStream(destPath);
+        req.pipe(fileStream);
+        fileStream.on('finish', () => {
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ status: 'SUCCESS', savedPath: destPath }));
+          if (mainWindow) {
+            mainWindow.webContents.send('log-message', { type: 'data', message: `Archivo subido desde celular a: ${path.basename(destPath)}` });
+          }
+        });
+        fileStream.on('error', (err) => {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: err.message }));
+        });
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+      return;
+    }
+
     res.writeHead(404, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ error: 'Not found' }));
   });
 
   wss = new WebSocket.Server({ server });
+
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.warn(`[Sync Engine Warning] El puerto ${PORT} ya esta en uso. Continuando...`);
+    } else {
+      console.error('[Sync Engine Server Error]:', err);
+    }
+  });
 
   server.listen(PORT, '0.0.0.0', () => {
     console.log('====================================================');
@@ -471,6 +632,18 @@ ipcMain.on('send-clipboard-to-phone', (event, text) => {
 
 ipcMain.on('lock-pc', () => {
   executeCommand('LOCK_SCREEN', {});
+});
+
+ipcMain.on('open-downloads', () => {
+  executeCommand('OPEN_DOWNLOADS', {});
+});
+
+ipcMain.on('open-notepad', () => {
+  executeCommand('OPEN_NOTEPAD', {});
+});
+
+ipcMain.on('mute-pc', () => {
+  executeCommand('VOLUME_MUTE', {});
 });
 
 app.whenReady().then(() => {

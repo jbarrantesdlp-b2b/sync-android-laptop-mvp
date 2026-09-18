@@ -32,6 +32,11 @@ import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 
+/**
+ * 2x2 Widget Acciones (Acceso Rápido) - Exact Match to media_1789632468509.jpg:
+ * [🔄 Sync]       [↗ Enviar]
+ * [✦ IA]         [🔒 Bloquear]
+ */
 @Suppress("RestrictedApi")
 object ActionsGlanceWidget : GlanceAppWidget() {
     override val sizeMode: SizeMode = SizeMode.Single
@@ -47,37 +52,37 @@ object ActionsGlanceWidget : GlanceAppWidget() {
             ) {
                 Row(modifier = GlanceModifier.fillMaxWidth().defaultWeight()) {
                     ActionTile(
-                        symbol = "⎘",
-                        label = "Enviar",
-                        bgRes = R.drawable.widget_tile_blue,
-                        symbolColor = Color.White,
-                        modifier = GlanceModifier.defaultWeight().clickable(actionStartActivity(openAppIntent("clipboard")))
+                        symbol = "🔄",
+                        label = "Sync",
+                        bgRes = R.drawable.widget_tile_bg,
+                        symbolColor = Color(0xFF00BFFF),
+                        modifier = GlanceModifier.defaultWeight().clickable(actionRunCallback<ManualSyncAction>())
                     )
                     Spacer(GlanceModifier.width(8.dp))
                     ActionTile(
-                        symbol = "☁",
-                        label = "Sync",
+                        symbol = "↗",
+                        label = "Enviar",
                         bgRes = R.drawable.widget_tile_bg,
                         symbolColor = Color.White,
-                        modifier = GlanceModifier.defaultWeight().clickable(actionRunCallback<ManualSyncAction>())
+                        modifier = GlanceModifier.defaultWeight().clickable(actionStartActivity(openAppIntent("clipboard")))
                     )
                 }
                 Spacer(GlanceModifier.height(8.dp))
                 Row(modifier = GlanceModifier.fillMaxWidth().defaultWeight()) {
                     ActionTile(
                         symbol = "✦",
-                        label = "Ask AI",
+                        label = "IA",
                         bgRes = R.drawable.widget_tile_bg,
                         symbolColor = Color(0xFF38BDF8),
                         modifier = GlanceModifier.defaultWeight().clickable(actionStartActivity(openAppIntent("ai")))
                     )
                     Spacer(GlanceModifier.width(8.dp))
                     ActionTile(
-                        symbol = "⊞",
-                        label = "Automatizar",
+                        symbol = "🔒",
+                        label = "Bloquear",
                         bgRes = R.drawable.widget_tile_bg,
-                        symbolColor = Color(0xFF94A3B8),
-                        modifier = GlanceModifier.defaultWeight().clickable(actionStartActivity(openAppIntent("devices")))
+                        symbolColor = Color(0xFFEF4444),
+                        modifier = GlanceModifier.defaultWeight().clickable(actionRunCallback<LockPcAction>())
                     )
                 }
             }
@@ -98,26 +103,26 @@ private fun ActionTile(
         modifier = modifier
             .fillMaxSize()
             .background(ImageProvider(bgRes))
-            .cornerRadius(18.dp)
+            .cornerRadius(16.dp)
             .padding(6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
             text = symbol,
             style = TextStyle(
-                fontSize = 20.sp,
+                fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = ColorProvider(symbolColor),
                 textAlign = TextAlign.Center
             )
         )
-        Spacer(GlanceModifier.height(2.dp))
+        Spacer(GlanceModifier.height(4.dp))
         Text(
             text = label,
             style = TextStyle(
                 fontSize = 11.sp,
-                fontWeight = FontWeight.Medium,
+                fontWeight = FontWeight.Bold,
                 color = ColorProvider(Color.White),
                 textAlign = TextAlign.Center
             )

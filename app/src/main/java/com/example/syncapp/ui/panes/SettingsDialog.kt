@@ -158,27 +158,53 @@ fun SettingsBottomSheet(
                 Text("Guardar Clave Gemini", fontSize = 12.sp, fontWeight = FontWeight.Bold)
             }
 
-            // Theme Selection
-            Text("TEMA VISUAL", color = DesignTokens.TextMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
+            // Theme Selection (3 Diseños de Vanguardia)
+            Text("DISEÑO Y TEMA DEL ECOSISTEMA", color = DesignTokens.TextMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp)
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 ThemePack.values().forEach { pack ->
                     val isSelected = pack == currentTheme
+                    val icon = when (pack) {
+                        ThemePack.NeoObsidian -> "🌌"
+                        ThemePack.QuantumLumina -> "💎"
+                        ThemePack.HyperBauhaus -> "⚡"
+                    }
+                    val subtitle = when (pack) {
+                        ThemePack.NeoObsidian -> "Diseño #1 Base · Precisión de Élite (Raycast / Porsche)"
+                        ThemePack.QuantumLumina -> "Alternativa · Vidrio Líquido Refractivo (VisionOS)"
+                        ThemePack.HyperBauhaus -> "Alternativa · Cyber-Brutalismo Cinético (Nothing OS)"
+                    }
                     Surface(
-                        shape = DesignTokens.ShapePill,
-                        color = if (isSelected) DesignTokens.ElectricBlue else DesignTokens.SurfaceSubtle,
-                        border = BorderStroke(1.dp, if (isSelected) DesignTokens.ElectricBlue else DesignTokens.SurfaceBorder),
-                        modifier = Modifier.clickable { onSelectTheme(pack) }
+                        shape = DesignTokens.ShapeMedium,
+                        color = if (isSelected) pack.surface else DesignTokens.SurfaceSubtle,
+                        border = BorderStroke(if (isSelected) 1.5.dp else 1.dp, if (isSelected) pack.primary else DesignTokens.SurfaceBorder),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onSelectTheme(pack) }
                     ) {
-                        Text(
-                            text = pack.displayName,
-                            color = if (isSelected) Color.White else DesignTokens.TextSecondary,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                        )
+                        Row(
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(text = icon, fontSize = 20.sp)
+                            Spacer(Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = pack.displayName,
+                                    color = if (isSelected) Color.White else DesignTokens.TextSecondary,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = subtitle,
+                                    color = if (isSelected) pack.primary else DesignTokens.TextMuted,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                            if (isSelected) {
+                                Text("● ACTIVO", color = pack.primary, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold)
+                            }
+                        }
                     }
                 }
             }

@@ -363,7 +363,7 @@ def generate(root: Path, source_mark: Path | None) -> None:
         fg = fit_square(mark, fg_px, None, safe=0.20)
         write_png(fg, app_res / f"drawable-{name}" / "ic_launcher_foreground.png")
 
-    write_png(fit_square(mark, 512, OLED, safe=0.18), app_res / "drawable-nodpi" / "sync_engine_mark.png")
+    write_png(fit_square(mark, 512, None, safe=0.18), app_res / "drawable-nodpi" / "sync_engine_mark.png")
     write_png(lockup.resize((512, 512), Image.Resampling.LANCZOS), app_res / "drawable-nodpi" / "sync_engine_lockup.png")
     write_png(fit_square(silhouette, 432, None, safe=0.22), app_res / "drawable-nodpi" / "ic_launcher_monochrome.png")
     write_png(fit_square(mark, 512, OLED, safe=0.18), app_res / "drawable-nodpi" / "ic_launcher-playstore.png")
